@@ -1,4 +1,13 @@
-apply plugin: 'java'
+apply plugin: 'application'
+
+task copyResources(type: Copy) {
+    from 'src/hoaftq/puzzle/resource'
+    into 'build/classes/java/main/hoaftq/puzzle/resource'
+}
+
+application {
+    mainClass = 'hoaftq.puzzle.game.Puzzle'
+}
 
 sourceSets {
     main {
@@ -8,21 +17,16 @@ sourceSets {
     }
 }
 
-
-task copyResources(type: Copy) {
-    from "src/hoaftq/puzzle/resource"
-    into "build/classes/java/main/hoaftq/puzzle/resource"
+compileJava {
+    dependsOn copyResources
 }
 
 jar {
     manifest {
         attributes(
                 'Main-Class': 'hoaftq.puzzle.game.Puzzle',
-                'Develop-by': 'hoaftq@gmail.com'
         )
     }
 
-    archiveFileName = "Puzzle.jar"
-
-    dependsOn copyResources
+    archiveFileName = 'Puzzle.jar'
 }
