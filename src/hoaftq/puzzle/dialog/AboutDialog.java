@@ -1,127 +1,115 @@
 /**
  * Puzzle game using Java AWT
- * Copyright @ 2011 Trac Quang Hoa
  */
 package hoaftq.puzzle.dialog;
 
-import java.awt.BorderLayout;
-import java.awt.Cursor;
-import java.awt.Desktop;
+import hoaftq.puzzle.utility.WindowUtil;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
 import java.awt.Desktop.Action;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
-import hoaftq.puzzle.utility.WindowUtil;
-
 /**
  * Puzzle about dialog
  */
 public class AboutDialog extends JDialog {
+    private static final String HOME_PAGE = "https://github.com/hoaftq";
 
-	/**
-	 * Create about dialog
-	 * 
-	 * @param owner
-	 *            owner of the dialog
-	 */
-	public AboutDialog(JFrame owner) {
-		super(owner, "About Puzzle", true);
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+    /**
+     * Create about dialog
+     *
+     * @param owner owner of the dialog
+     */
+    public AboutDialog(JFrame owner) {
+        super(owner, "About Puzzle", true);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-		// Create puzzle information label
-		JLabel infoLabel = new JLabel(
-				"<html><table>"
-						+ "<tr><td colspan=2 align=center><font size=6 color=Red>Game Puzzle 1.0</font></td></tr>"
-						+ "<tr><td>Write by:</td><td>Trac Quang Hoa</td></tr>"
-						+ "<tr><td></td><td>Cam Binh, Cam Xuyen, Ha Tinh</td></tr>"
-						+ "<tr><td>Date:</td><td>09-10-2011</td></tr>"
-						+ "</table></html>");
-		JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		infoPanel.add(infoLabel);
-		add(infoPanel, BorderLayout.NORTH);
+        createLayout();
 
-		final String enteredVisitLabel = "<html><table><tr><a href='"
-				+ THBT_WEB_ADDRESS + "'><i>" + THBT_WEB_ADDRESS
-				+ "</i></a></tr></table></html>";
-		final String exitedVisitLabel = "<html><table><tr><a href='"
-				+ THBT_WEB_ADDRESS + "'>" + THBT_WEB_ADDRESS
-				+ "</a></tr></table></html>";
+        WindowUtil.centerOwner(this);
+        setResizable(false);
+    }
 
-		// Create my home page panel
-		JPanel visitPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-		visitPanel.add(new JLabel(
-				"<html><table><tr><td>Visit:</td></tr></table></html>"));
+    private void createLayout() {
 
-		JLabel visitLabel = new JLabel(exitedVisitLabel);
-		visitLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        // Create puzzle label
+        var titleLabel = new JLabel("""
+                <html>
+                  <center><font size=+2 color=red>Game Puzzle</font></center>
+                </html>""");
+        var titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        titlePanel.add(titleLabel);
+        add(titlePanel, BorderLayout.NORTH);
 
-		// Make entered/exited animate and process my home page link clicked
-		visitLabel.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
+        // Create home page panel
+        var infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        infoPanel.setBorder(new EmptyBorder(0, 7, 0, 5));
+        infoPanel.add(new JLabel("Home page:"));
+        infoPanel.add(createHomePageLabel());
+        add(infoPanel, BorderLayout.CENTER);
 
-				// Open my home page with default browser
-				Desktop desktop = Desktop.getDesktop();
-				if (desktop.isSupported(Action.BROWSE)) {
-					try {
-						desktop.browse(new URI(THBT_WEB_ADDRESS));
-					} catch (IOException ex) {
-						ex.printStackTrace();
-					} catch (URISyntaxException ex) {
-						ex.printStackTrace();
-					}
-				}
-			}
+        // Create a panel for OK button
+        var buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 15));
+        buttonPanel.add(createOKButton());
+        add(buttonPanel, BorderLayout.SOUTH);
 
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				((JLabel) e.getSource()).setText(enteredVisitLabel);
-			}
+        pack();
+    }
 
-			@Override
-			public void mouseExited(MouseEvent e) {
-				((JLabel) e.getSource()).setText(exitedVisitLabel);
-			}
-		});
-		visitPanel.add(visitLabel);
-		add(visitPanel, BorderLayout.CENTER);
+    private static JLabel createHomePageLabel() {
+        final var hoverContent = "<html><a href='" + HOME_PAGE + "'>"
+                                 + "<i>" + HOME_PAGE + "</i></a></html>";
+        final var normalContent = "<html><a href='" + HOME_PAGE + "'>"
+                                  + HOME_PAGE + "</a></html>";
 
-		// Create panel container OK button
-		JPanel buttonPanel = new JPanel(
-				new FlowLayout(FlowLayout.CENTER, 0, 15));
-		JButton okButton = new JButton("OK");
-		okButton.addActionListener(new ActionListener() {
-			@Override
-			public void actionPerformed(ActionEvent e) {
+        var label = new JLabel(normalContent);
+        label.setBorder(new EmptyBorder(0, 0, 0, 2));
+        label.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-				// Destroy about dialog
-				setVisible(false);
-				dispose();
-			}
-		});
-		buttonPanel.add(okButton);
-		add(buttonPanel, BorderLayout.SOUTH);
+        // Make entered/exited animation and open home page link on clicking
+        label.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                var desktop = Desktop.getDesktop();
+                if (desktop.isSupported(Action.BROWSE)) {
+                    try {
+                        // Open my home page with default browser
+                        desktop.browse(new URI(HOME_PAGE));
+                    } catch (IOException | URISyntaxException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
 
-		pack();
-		WindowUtil.centerOwner(this);
-		setResizable(false);
-	}
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                ((JLabel) e.getSource()).setText(hoverContent);
+            }
 
-	/**
-	 * My home page address
-	 */
-	private static final String THBT_WEB_ADDRESS = "http://thbt.webng.com";
-	private static final long serialVersionUID = 1L;
+            @Override
+            public void mouseExited(MouseEvent e) {
+                ((JLabel) e.getSource()).setText(normalContent);
+            }
+        });
+
+        return label;
+    }
+
+    private JButton createOKButton() {
+        var okButton = new JButton("OK");
+        okButton.addActionListener(e -> {
+
+            // Destroy about dialog
+            setVisible(false);
+            dispose();
+        });
+
+        return okButton;
+    }
 }

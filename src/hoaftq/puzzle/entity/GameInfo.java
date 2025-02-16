@@ -203,14 +203,14 @@ public class GameInfo {
 
 		// Get horizontal subdivision
 		String xString = properties.getProperty(X_KEY);
-		if (!isPieceNumber(xString)) {
+		if (!validateRowOrColumn(xString)) {
 			xString = "4";
 		}
 		gameInfo.setxSplit(Byte.parseByte(xString));
 
 		// Get vertical subdivision
 		String yString = properties.getProperty(Y_KEY);
-		if (!isPieceNumber(yString)) {
+		if (!validateRowOrColumn(yString)) {
 			yString = "4";
 		}
 		gameInfo.setySplit(Byte.parseByte(yString));
@@ -226,7 +226,7 @@ public class GameInfo {
 	 *            piece number string
 	 * @return true if is piece number, false otherwise
 	 */
-	public static boolean isPieceNumber(String value) {
+	public static boolean validateRowOrColumn(String value) {
 		if (value == null || !value.matches("0*[1-9]\\d{0,1}")) {
 			return false;
 		}
