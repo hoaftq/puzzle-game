@@ -22,14 +22,69 @@ import javax.swing.Timer;
 
 import hoaftq.puzzle.entity.GameInfo;
 import hoaftq.puzzle.info.Numbers;
-import hoaftq.puzzle.piece.PieceAbstract;
-import hoaftq.puzzle.piece.PieceImage;
-import hoaftq.puzzle.piece.PieceNumber;
+import hoaftq.puzzle.piece.TilesView;
+import hoaftq.puzzle.piece.ImageView;
+import hoaftq.puzzle.piece.NumbersView;
 
 /**
  * Panel display game board
  */
 public class GamePanel extends JPanel {
+	private final static int MARGIN_LEFT = 0;
+	private final static int MARGIN_TOP = 0;
+	private final static int MARGIN_RIGHT = 0;
+	private final static int MARGIN_BOTTOM = 50;
+
+	/**
+	 * Game state
+	 */
+	private boolean isPlaying = false;
+
+	/**
+	 * Subdivision horizontal
+	 */
+	private byte row;
+
+	/**
+	 * Subdivision vertical
+	 */
+	private byte column;
+
+	/**
+	 * Piece game board
+	 */
+	private Piece[][] pieces;
+
+	/**
+	 * Empty piece
+	 */
+	private Piece emptyPiece;
+
+	/**
+	 * Piece object (image piece or number piece)
+	 */
+	private TilesView pieceObject;
+
+	/**
+	 * Time played
+	 */
+	private int time;
+
+	/**
+	 * Step moved
+	 */
+	private int step;
+
+	/**
+	 * Timer count time played
+	 */
+	private Timer timer;
+
+	/**
+	 * Number object used to display time played and step
+	 */
+	private Numbers numbers;
+
 
 	/**
 	 * Create game panel
@@ -83,36 +138,36 @@ public class GamePanel extends JPanel {
 	public void newGame(GameInfo gameInfo) {
 
 		// Set subdivision size
-		xSplit = gameInfo.getxSplit();
-		ySplit = gameInfo.getySplit();
+		row = gameInfo.row();
+		column = gameInfo.column();
 
 		// Initialize image pieces/number pieces
-		if (gameInfo.isUsedImage()) {
+		if (gameInfo.usedImage()) {
 			try {
-				pieceObject = new PieceImage(gameInfo);
+				pieceObject = new ImageView(gameInfo);
 			} catch (IOException e) {
-				pieceObject = new PieceNumber(xSplit, ySplit, this.getWidth(),
+				pieceObject = new NumbersView(row, column, this.getWidth(),
 						this.getHeight());
 			}
 		} else {
-			pieceObject = new PieceNumber(xSplit, ySplit, this.getWidth(),
+			pieceObject = new NumbersView(row, column, this.getWidth(),
 					this.getHeight());
 		}
 		setGameBoardSize(getWidth(), getHeight());
 
 		// Initialize empty piece
-		switch (gameInfo.getEmptyPosition()) {
-		case TOPLEFT:
+		switch (gameInfo.emptyPosition()) {
+		case TOP_LEFT:
 			emptyPiece = new Piece((byte) 0, (byte) 0);
 			break;
-		case TOPRIGHT:
-			emptyPiece = new Piece((byte) (xSplit - 1), (byte) 0);
+		case TOP_RIGHT:
+			emptyPiece = new Piece((byte) (row - 1), (byte) 0);
 			break;
-		case BOTTOMRIGHT:
-			emptyPiece = new Piece((byte) (xSplit - 1), (byte) (ySplit - 1));
+		case BOTTOM_RIGHT:
+			emptyPiece = new Piece((byte) (row - 1), (byte) (column - 1));
 			break;
-		case BOTTOMLEFT:
-			emptyPiece = new Piece((byte) 0, (byte) (ySplit - 1));
+		case BOTTOM_LEFT:
+			emptyPiece = new Piece((byte) 0, (byte) (column - 1));
 			break;
 		}
 
@@ -136,16 +191,16 @@ public class GamePanel extends JPanel {
 			// Draw game board background
 			g.setColor(Color.WHITE);
 			g.fillRect(MARGIN_LEFT, MARGIN_TOP,
-					(pieceObject.getWidth() / pieceObject.getXSplit())
-							* pieceObject.getXSplit(),
-					(pieceObject.getHeight() / pieceObject.getYSplit())
-							* pieceObject.getYSplit() + 2);
+					(pieceObject.getWidth() / pieceObject.getRow())
+							* pieceObject.getRow(),
+					(pieceObject.getHeight() / pieceObject.getColumn())
+							* pieceObject.getColumn() + 2);
 
 			// Draw pieces
-			for (byte i = 0; i < xSplit; i++) {
-				for (byte j = 0; j < ySplit; j++) {
+			for (byte i = 0; i < row; i++) {
+				for (byte j = 0; j < column; j++) {
 					if (emptyPiece.x != i || emptyPiece.y != j) {
-						pieceObject.drawPiece(g, MARGIN_LEFT, MARGIN_TOP, i, j,
+						pieceObject.drawOne(g, MARGIN_LEFT, MARGIN_TOP, i, j,
 								pieces[i][j].x, pieces[i][j].y);
 					}
 				}
@@ -184,9 +239,9 @@ public class GamePanel extends JPanel {
 	private void createGameBoard() {
 
 		// Initialize original game board
-		pieces = new Piece[xSplit][ySplit];
-		for (byte i = 0; i < xSplit; i++) {
-			for (byte j = 0; j < ySplit; j++) {
+		pieces = new Piece[row][column];
+		for (byte i = 0; i < row; i++) {
+			for (byte j = 0; j < column; j++) {
 				pieces[i][j] = new Piece(i, j);
 			}
 		}
@@ -289,8 +344,8 @@ public class GamePanel extends JPanel {
 		boolean isFinished = true;
 
 		// Check pieces on ySplit - 1 rows on the top
-		for (int i = 0; i < xSplit; i++) {
-			for (int j = 0; j < ySplit - 1; j++) {
+		for (int i = 0; i < row; i++) {
+			for (int j = 0; j < column - 1; j++) {
 				if (pieces[i][j].x != i || pieces[i][j].y != j) {
 					isFinished = false;
 				}
@@ -298,9 +353,9 @@ public class GamePanel extends JPanel {
 		}
 
 		// Check pieces on the bottom row
-		for (int i = 0; i < xSplit - 1; i++) {
-			if (pieces[i][ySplit - 1].x != i
-					|| pieces[i][ySplit - 1].y != ySplit - 1) {
+		for (int i = 0; i < row - 1; i++) {
+			if (pieces[i][column - 1].x != i
+					|| pieces[i][column - 1].y != column - 1) {
 				isFinished = false;
 			}
 		}
@@ -323,87 +378,16 @@ public class GamePanel extends JPanel {
 	 *         board)
 	 */
 	private Piece getPieceFromMousePos(int x, int y) {
-		int tempX = (x - MARGIN_LEFT) * xSplit / pieceObject.getWidth();
-		int tempY = (y - MARGIN_TOP) * ySplit / pieceObject.getHeight();
+		int tempX = (x - MARGIN_LEFT) * row / pieceObject.getWidth();
+		int tempY = (y - MARGIN_TOP) * column / pieceObject.getHeight();
 
-		if (tempX < 0 || tempX > xSplit - 1 || tempY < 0 || tempY > ySplit - 1) {
+		if (tempX < 0 || tempX > row - 1 || tempY < 0 || tempY > column - 1) {
 			return null;
 		}
 
 		return new Piece((byte) tempX, (byte) tempY);
 	}
 
-	/**
-	 * Game state
-	 */
-	private boolean isPlaying = false;
-
-	/**
-	 * Subdivision horizontal
-	 */
-	private byte xSplit;
-
-	/**
-	 * Subdivision vertical
-	 */
-	private byte ySplit;
-
-	/**
-	 * Piece game board
-	 */
-	private Piece[][] pieces;
-
-	/**
-	 * Empty piece
-	 */
-	private Piece emptyPiece;
-
-	/**
-	 * Piece object (image piece or number piece)
-	 */
-	private PieceAbstract pieceObject;
-
-	/**
-	 * Time played
-	 */
-	private int time;
-
-	/**
-	 * Step moved
-	 */
-	private int step;
-
-	/**
-	 * Timer count time played
-	 */
-	private Timer timer;
-
-	/**
-	 * Number object used to display time played and step
-	 */
-	private Numbers numbers;
-
-	/**
-	 * Left margin of game board
-	 */
-	private final static int MARGIN_LEFT = 0;
-
-	/**
-	 * Top margin of game board
-	 */
-	private final static int MARGIN_TOP = 0;
-
-	/**
-	 * Right margin of game board
-	 */
-	private final static int MARGIN_RIGHT = 0;
-
-	/**
-	 * Bottom margin of game board
-	 */
-	private final static int MARGIN_BOTTOM = 50;
-
-	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Mouse clicked handler
@@ -441,7 +425,7 @@ public class GamePanel extends JPanel {
 			case KeyEvent.VK_LEFT:
 
 				// If have a piece on the right empty piece, move it to left
-				if (emptyPiece.x < xSplit - 1) {
+				if (emptyPiece.x < row - 1) {
 					pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x + 1][emptyPiece.y];
 					emptyPiece.x++;
 					step++;
@@ -474,7 +458,7 @@ public class GamePanel extends JPanel {
 			case KeyEvent.VK_UP:
 
 				// If have a piece on the bottom empty piece, move it to up
-				if (emptyPiece.y < xSplit - 1) {
+				if (emptyPiece.y < row - 1) {
 					pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x][emptyPiece.y + 1];
 					emptyPiece.y++;
 					step++;

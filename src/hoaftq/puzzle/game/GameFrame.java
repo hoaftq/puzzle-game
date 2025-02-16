@@ -8,6 +8,8 @@ import hoaftq.puzzle.dialog.AboutDialog;
 import hoaftq.puzzle.dialog.OptionDialog;
 import hoaftq.puzzle.dialog.OptionStorage;
 import hoaftq.puzzle.entity.GameInfo;
+import hoaftq.puzzle.entity.GameInfoStorage;
+import hoaftq.puzzle.entity.GameInfoValidator;
 import hoaftq.puzzle.utility.WindowUtil;
 
 import javax.swing.*;
@@ -22,10 +24,13 @@ import java.io.IOException;
  */
 public class GameFrame extends JFrame {
 
+    private final GameInfoStorage gameInfoStorage;
+
     /**
      * Create game frame
      */
-    public GameFrame() {
+    public GameFrame(GameInfoStorage gameInfoStorage) {
+        this.gameInfoStorage = gameInfoStorage;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setTitle("Puzzle");
         setWindowLookAndFeel();
@@ -37,7 +42,7 @@ public class GameFrame extends JFrame {
 
         // Create game panel with game information get from properties file
         try {
-            gamePanel = new GamePanel(gameInfo = GameInfo.loadData());
+            gamePanel = new GamePanel(gameInfo = gameInfoStorage.get());
             add(gamePanel);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null,
@@ -99,7 +104,9 @@ public class GameFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (optionDialog == null) {
                     var optionStorage = new OptionStorage();
-                    optionDialog = new OptionDialog(GameFrame.this, optionStorage, gameInfo);
+                    var gameInfoValidator = new GameInfoValidator();
+                    var gameInfoStorage = new GameInfoStorage(gameInfoValidator);
+                    optionDialog = new OptionDialog(GameFrame.this, optionStorage, gameInfoValidator, gameInfoStorage, gameInfo);
                 }
 
                 if (optionDialog.showDialog()) {

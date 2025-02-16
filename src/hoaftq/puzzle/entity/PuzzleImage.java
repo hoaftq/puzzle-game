@@ -1,108 +1,68 @@
 /**
  * Puzzle game using Java AWT
- * Copyright @ 2011 Trac Quang Hoa
  */
 package hoaftq.puzzle.entity;
 
-import java.awt.Image;
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
-
-import javax.imageio.ImageIO;
+import java.util.Objects;
 
 /**
  * Puzzle image
  */
-public class PuzzleImage implements Serializable {
+public record PuzzleImage(String fileName, boolean isInternalResource) implements Serializable {
 
-	/**
-	 * Create puzzle image
-	 * 
-	 * @param fileName
-	 *            image file name
-	 * @param isInternalResource
-	 *            is on the execute file
-	 */
-	public PuzzleImage(String fileName, boolean isInternalResource) {
-		this.fileName = fileName;
-		this.isInternalResource = isInternalResource;
-	}
+    /**
+     * Create puzzle image
+     *
+     * @param fileName           image file name
+     * @param isInternalResource is on the execute file
+     */
+    public PuzzleImage(String fileName, boolean isInternalResource) {
+        this.fileName = fileName;
+        this.isInternalResource = isInternalResource;
+    }
 
-	/**
-	 * @return image file name
-	 */
-	public String getFileName() {
-		return fileName;
-	}
+    /**
+     * @return image file name
+     */
+    public String getFileName() {
+        return fileName;
+    }
 
-	/**
-	 * @return is image file on the execute file
-	 */
-	public boolean isInternalResource() {
-		return isInternalResource;
-	}
+    /**
+     * @return is an embedded image or external one
+     */
+    public boolean isInternalResource() {
+        return isInternalResource;
+    }
 
-	/**
-	 * Load image from resource or file
-	 * 
-	 * @param puzzleImage
-	 *            puzzle image
-	 * @return image
-	 * @throws IOException
-	 *             an error occurs during reading
-	 */
-	public Image loadImage() throws IOException {
-		Image image;
-		if (isInternalResource) {
-			image = ImageIO.read(getClass().getResource(
-					"/hoaftq/puzzle/resource/" + fileName));
-		} else {
-			image = ImageIO.read(new File(fileName));
-		}
+    /**
+     * Load image from resource or a file
+     *
+     * @return image
+     * @throws IOException an error occurs during reading
+     */
+    public Image loadImage() throws IOException {
+        if (isInternalResource) {
+            var resourceURL = getClass().getResource("/hoaftq/puzzle/resource/" + fileName);
+            Objects.requireNonNull(resourceURL);
 
-		return image;
-	}
+            return ImageIO.read(resourceURL);
+        }
 
-	@Override
-	public String toString() {
-		if (isInternalResource) {
-			return fileName;
-		} else {
-			File file = new File(fileName);
-			return file.getName();
-		}
-	}
+        return ImageIO.read(new File(fileName));
+    }
 
-	@Override
-	public boolean equals(Object o) {
-		if (!(o instanceof PuzzleImage) || fileName == null) {
-			return false;
-		}
-		PuzzleImage imageName = (PuzzleImage) o;
+    @Override
+    public String toString() {
+        if (isInternalResource) {
+            return fileName;
+        }
 
-		return fileName.equals(imageName.fileName)
-				&& isInternalResource == imageName.isInternalResource;
-	}
-
-	@Override
-	public int hashCode() {
-		String internalResourceString = String.valueOf(isInternalResource);
-		if (fileName == null) {
-			return internalResourceString.hashCode();
-		}
-
-		return (fileName + internalResourceString).hashCode();
-	}
-
-	/**
-	 * Image file name
-	 */
-	private String fileName;
-
-	/**
-	 * Is image file on the execute file
-	 */
-	private boolean isInternalResource;
-	private static final long serialVersionUID = 1L;
+        return new File(fileName).getName();
+    }
 }

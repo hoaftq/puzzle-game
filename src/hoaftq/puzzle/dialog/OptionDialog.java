@@ -4,8 +4,7 @@
  */
 package hoaftq.puzzle.dialog;
 
-import hoaftq.puzzle.entity.GameInfo;
-import hoaftq.puzzle.entity.PuzzleImage;
+import hoaftq.puzzle.entity.*;
 import hoaftq.puzzle.utility.WindowUtil;
 
 import javax.swing.*;
@@ -18,8 +17,10 @@ import java.io.File;
  */
 public class OptionDialog extends JDialog {
     private final OptionStorage optionStorage;
+    private final GameInfoValidator validator;
 
-    private final GameInfo gameInfo;
+    private final GameInfoStorage gameInfoStorage;
+    private GameInfo gameInfo;
 
     private JRadioButton imageRadioButton;
 
@@ -54,9 +55,11 @@ public class OptionDialog extends JDialog {
      * @param owner    owner of dialog
      * @param gameInfo game information
      */
-    public OptionDialog(JFrame owner, OptionStorage optionStorage, GameInfo gameInfo) {
+    public OptionDialog(JFrame owner, OptionStorage optionStorage, GameInfoValidator validator, GameInfoStorage gameInfoStorage, GameInfo gameInfo) {
         super(owner, "Customize Game", true);
         this.optionStorage = optionStorage;
+        this.validator = validator;
+        this.gameInfoStorage = gameInfoStorage;
         this.gameInfo = gameInfo;
 
         createLayout();
@@ -82,7 +85,7 @@ public class OptionDialog extends JDialog {
 
         setResizable(false);
 
-        showImageOrNumbers(gameInfo.isUsedImage(), gameInfo.getPuzzleImage());
+        showImageOrNumbers(gameInfo.usedImage(), gameInfo.puzzleImage());
     }
 
     /**
@@ -93,11 +96,11 @@ public class OptionDialog extends JDialog {
         var optionButtonGroup = new ButtonGroup();
 
         imageRadioButton = createImageNumberRadioButton(
-                optionButtonGroup, "Use image", gameInfo.isUsedImage());
+                optionButtonGroup, "Use image", gameInfo.usedImage());
         panel.add(imageRadioButton);
 
         var numberRadioButton = createImageNumberRadioButton(
-                optionButtonGroup, "Use number", !gameInfo.isUsedImage());
+                optionButtonGroup, "Use number", !gameInfo.usedImage());
         panel.add(numberRadioButton);
 
         return panel;
@@ -146,7 +149,7 @@ public class OptionDialog extends JDialog {
 
         puzzleImageList = new JList<>(listModel);
         puzzleImageList.setFixedCellWidth(200);
-        puzzleImageList.setSelectedValue(gameInfo.getPuzzleImage(), true);
+        puzzleImageList.setSelectedValue(gameInfo.puzzleImage(), true);
         puzzleImageList.addListSelectionListener(e -> {
             if (!imageNumbersPanel.setDisplayingObject(puzzleImageList.getSelectedValue())) {
                 listModel.removeElement(puzzleImageList.getSelectedValue());
@@ -250,7 +253,7 @@ public class OptionDialog extends JDialog {
     private JButton createOKButton() {
         var okButton = new JButton("OK");
         okButton.addActionListener(e -> {
-            if (!GameInfo.validateRowOrColumn(rowTextField.getText())) {
+            if (!validator.validateRowOrColumn(rowTextField.getText())) {
                 JOptionPane.showMessageDialog(OptionDialog.this,
                         "Please enter a number from 2 to 10.");
                 rowTextField.requestFocus();
@@ -258,7 +261,7 @@ public class OptionDialog extends JDialog {
                 return;
             }
 
-            if (!GameInfo.validateRowOrColumn(colTextField.getText())) {
+            if (!validator.validateRowOrColumn(colTextField.getText())) {
                 JOptionPane.showMessageDialog(OptionDialog.this,
                         "Please enter a number from 2 to 10.");
                 colTextField.requestFocus();
@@ -273,15 +276,13 @@ public class OptionDialog extends JDialog {
                 return;
             }
 
-            gameInfo.setxSplit(Byte.parseByte(rowTextField.getText()));
-            gameInfo.setySplit(Byte.parseByte(colTextField.getText()));
-            gameInfo.setUsedImage(usedImage);
-            gameInfo.setPuzzleImage(puzzleImageList.getSelectedValue());
+            gameInfo = new GameInfo(usedImage, puzzleImageList.getSelectedValue(), Byte.parseByte(rowTextField.getText()),
+                    Byte.parseByte(colTextField.getText()), EmptyTilePosition.BOTTOM_RIGHT);
 
             // Save game information to data file
-            gameInfo.saveData();
+            gameInfoStorage.save(gameInfo);
 
-            imageNumbersPanel.setDisplayingObject(usedImage ? gameInfo.getPuzzleImage() : null);
+            imageNumbersPanel.setDisplayingObject(usedImage ? gameInfo.puzzleImage() : null);
 
             isOK = true;
             OptionDialog.this.setVisible(false);
@@ -296,9 +297,9 @@ public class OptionDialog extends JDialog {
     private JPanel createRowColumnPanel() {
         var panel = new JPanel(new GridLayout(2, 2, 1, 6));
         panel.add(new JLabel("Rows (2-10)"));
-        panel.add(rowTextField = new JTextField(Byte.toString(gameInfo.getxSplit()), 2));
+        panel.add(rowTextField = new JTextField(Byte.toString(gameInfo.row()), 2));
         panel.add(new JLabel("Columns (2-10)"));
-        panel.add(colTextField = new JTextField(Byte.toString(gameInfo.getySplit()), 2));
+        panel.add(colTextField = new JTextField(Byte.toString(gameInfo.column()), 2));
         return panel;
     }
 }
