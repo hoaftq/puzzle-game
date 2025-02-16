@@ -126,7 +126,11 @@ public class OptionDialog extends JDialog {
     private void showImageOrNumbers(boolean isImageUsed, PuzzleImage puzzleImage) {
         puzzleImageList.setEnabled(isImageUsed);
         browseButton.setEnabled(isImageUsed);
-        imageNumbersPanel.setDisplayingObject(isImageUsed ? puzzleImage : null);
+        if (isImageUsed) {
+            imageNumbersPanel.displayImage(puzzleImage);
+        } else {
+            imageNumbersPanel.displayNumbers();
+        }
     }
 
     /**
@@ -136,7 +140,7 @@ public class OptionDialog extends JDialog {
         var panel = new JPanel(new BorderLayout());
 
         // Create panel display image
-        imageNumbersPanel = new ImageNumbersPanel(gameInfo, 320, 200);
+        imageNumbersPanel = new ImageNumbersPanel(gameInfo.row(), gameInfo.column(), 320, 200);
         panel.add(imageNumbersPanel, BorderLayout.NORTH);
 
         // Create panel browse image
@@ -151,7 +155,7 @@ public class OptionDialog extends JDialog {
         puzzleImageList.setFixedCellWidth(200);
         puzzleImageList.setSelectedValue(gameInfo.puzzleImage(), true);
         puzzleImageList.addListSelectionListener(e -> {
-            if (!imageNumbersPanel.setDisplayingObject(puzzleImageList.getSelectedValue())) {
+            if (!imageNumbersPanel.displayImage(puzzleImageList.getSelectedValue())) {
                 listModel.removeElement(puzzleImageList.getSelectedValue());
             }
         });
@@ -282,7 +286,8 @@ public class OptionDialog extends JDialog {
             // Save game information to data file
             gameInfoStorage.save(gameInfo);
 
-            imageNumbersPanel.setDisplayingObject(usedImage ? gameInfo.puzzleImage() : null);
+            // FIXME
+//            imageNumbersPanel.displayImage(usedImage ? gameInfo.puzzleImage() : null);
 
             isOK = true;
             OptionDialog.this.setVisible(false);
@@ -296,9 +301,9 @@ public class OptionDialog extends JDialog {
      */
     private JPanel createRowColumnPanel() {
         var panel = new JPanel(new GridLayout(2, 2, 1, 6));
-        panel.add(new JLabel("Rows (2-10)"));
+        panel.add(new JLabel("Rows"));
         panel.add(rowTextField = new JTextField(Byte.toString(gameInfo.row()), 2));
-        panel.add(new JLabel("Columns (2-10)"));
+        panel.add(new JLabel("Columns"));
         panel.add(colTextField = new JTextField(Byte.toString(gameInfo.column()), 2));
         return panel;
     }

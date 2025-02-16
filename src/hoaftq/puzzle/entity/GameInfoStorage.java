@@ -103,8 +103,8 @@ public class GameInfoStorage {
             imageType = IMAGE_TYPE_USE_NUMBER;
         }
         properties.put(IMAGE_TYPE_KEY, imageType);
-        properties.put(ROW, gameInfo.row());
-        properties.put(COLUMN, gameInfo.column());
+        properties.put(ROW, String.valueOf(gameInfo.row()));
+        properties.put(COLUMN, String.valueOf(gameInfo.column()));
         return properties;
     }
 

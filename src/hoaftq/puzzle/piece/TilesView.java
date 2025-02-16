@@ -23,11 +23,6 @@ public abstract class TilesView {
      */
     protected int height;
 
-    protected TilesView(byte row, byte column) {
-        this.row = row;
-        this.column = column;
-    }
-
     protected TilesView(byte row, byte column, int width, int height) {
         this.row = row;
         this.column = column;
@@ -77,6 +72,7 @@ public abstract class TilesView {
                                  byte yOnGameBoard,
                                  byte xOnImageNumbers,
                                  byte yOnImageNumbers);
+
 
     /**
      * Draw complete game board with all the tiles

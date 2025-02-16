@@ -1,14 +1,14 @@
 package hoaftq.puzzle.dialog;
 
-import hoaftq.puzzle.entity.GameInfo;
 import hoaftq.puzzle.entity.PuzzleImage;
+import hoaftq.puzzle.piece.ImageTilesView;
+import hoaftq.puzzle.piece.NumberTilesView;
 import hoaftq.puzzle.piece.TilesView;
-import hoaftq.puzzle.piece.ImageView;
-import hoaftq.puzzle.piece.NumbersView;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Panel to display using image or numbers
@@ -17,16 +17,18 @@ public class ImageNumbersPanel extends JPanel {
     private static final String IMAGE_ERROR_MESSAGE = "Image could not be displayed. Please choose another one.";
 
     private final JPanel drawingPanel;
-    private final GameInfo gameInfo;
+    private final byte row;
+    private final byte column;
 
     /**
      * Piece image or piece number
      */
-    private TilesView pieceObject;
+    private TilesView tilesView;
     private boolean isImageError;
 
-    public ImageNumbersPanel(GameInfo gameInfo, int width, int height) {
-        this.gameInfo = gameInfo;
+    public ImageNumbersPanel(byte row, byte column, int width, int height) {
+        this.row = row;
+        this.column = column;
 
         // Create a sub panel that displays image or numbers
         drawingPanel = new JPanel() {
@@ -36,8 +38,8 @@ public class ImageNumbersPanel extends JPanel {
 
                 if (isImageError) {
                     drawImageErrorMessage(g, width, height);
-                } else if (pieceObject != null) {
-                    pieceObject.drawAll(g, 0, 0);
+                } else if (tilesView != null) {
+                    tilesView.drawAll(g, 0, 0);
                 }
             }
         };
@@ -48,36 +50,23 @@ public class ImageNumbersPanel extends JPanel {
         add(drawingPanel);
     }
 
-    /**
-     * Set puzzle image to display on the panel.
-     * If {@code puzzleImage} is null then numbers will be used instead.
-     *
-     * @param puzzleImage puzzle image to display
-     */
-    public boolean setDisplayingObject(PuzzleImage puzzleImage) {
-        isImageError = false;
-
-        if (puzzleImage != null) {
-            try {
-                pieceObject = new ImageView(
-                        gameInfo.row(),
-                        gameInfo.column(),
-                        drawingPanel.getWidth(),
-                        drawingPanel.getHeight(),
-                        puzzleImage);
-            } catch (IOException e) {
-                isImageError = true;
-            }
-        } else {
-            pieceObject = new NumbersView(
-                    gameInfo.row(),
-                    gameInfo.column(),
-                    drawingPanel.getWidth(),
-                    drawingPanel.getHeight());
+    public boolean displayImage(PuzzleImage puzzleImage) {
+        Objects.requireNonNull(puzzleImage);
+        try {
+            tilesView = new ImageTilesView(row, column, drawingPanel.getWidth(), drawingPanel.getHeight(), puzzleImage);
+            isImageError = false;
+        } catch (IOException e) {
+            isImageError = true;
+        } finally {
+            drawingPanel.repaint();
         }
 
-        drawingPanel.repaint();
         return !isImageError;
+    }
+
+    public void displayNumbers() {
+        tilesView = new NumberTilesView(row, column, drawingPanel.getWidth(), drawingPanel.getHeight());
+        drawingPanel.repaint();
     }
 
     private static void drawImageErrorMessage(Graphics g, int width, int height) {
