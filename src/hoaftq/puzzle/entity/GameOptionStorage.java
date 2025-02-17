@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
-public class GameInfoStorage {
+public class GameOptionStorage {
     private static final String PUZZLE_PROPERTIES_FILENAME_KEY = "Puzzle.properties";
     private static final String IMAGE_TYPE_KEY = "image-type";
     private static final String IMAGE_NAME_KEY = "image-name";
@@ -18,17 +18,17 @@ public class GameInfoStorage {
     private static final String IMAGE_TYPE_USE_INTERNAL_IMAGE = "1";
     private static final String IMAGE_TYPE_USE_EXTERNAL_IMAGE = "2";
 
-    private final GameInfoValidator validator;
+    private final GameOptionValidator validator;
 
-    public GameInfoStorage(GameInfoValidator validator) {
+    public GameOptionStorage(GameOptionValidator validator) {
         this.validator = validator;
     }
 
     /**
      * Save game information to properties file
      */
-    public void save(GameInfo gameInfo) {
-        var properties = createGameInfoProperties(gameInfo);
+    public void save(GameOption gameOption) {
+        var properties = createGameInfoProperties(gameOption);
 
         // Save information to properties file
         try {
@@ -50,7 +50,7 @@ public class GameInfoStorage {
      *
      * @return game information
      */
-    public GameInfo get() {
+    public GameOption get() {
         var properties = new Properties();
         try {
             properties.load(new FileInputStream(PUZZLE_PROPERTIES_FILENAME_KEY));
@@ -83,7 +83,7 @@ public class GameInfoStorage {
             column = "4";
         }
 
-        return new GameInfo(
+        return new GameOption(
                 usedImage,
                 puzzleImage,
                 Byte.parseByte(row),
@@ -91,20 +91,20 @@ public class GameInfoStorage {
                 EmptyTilePosition.BOTTOM_RIGHT);
     }
 
-    private static Properties createGameInfoProperties(GameInfo gameInfo) {
+    private static Properties createGameInfoProperties(GameOption gameOption) {
         var properties = new Properties();
         String imageType;
-        if (gameInfo.usedImage()) {
-            properties.put(IMAGE_NAME_KEY, gameInfo.puzzleImage().getFileName());
-            imageType = gameInfo.puzzleImage().isInternalResource()
+        if (gameOption.usedImage()) {
+            properties.put(IMAGE_NAME_KEY, gameOption.puzzleImage().getFileName());
+            imageType = gameOption.puzzleImage().isInternalResource()
                     ? IMAGE_TYPE_USE_INTERNAL_IMAGE
                     : IMAGE_TYPE_USE_EXTERNAL_IMAGE;
         } else {
             imageType = IMAGE_TYPE_USE_NUMBER;
         }
         properties.put(IMAGE_TYPE_KEY, imageType);
-        properties.put(ROW, String.valueOf(gameInfo.row()));
-        properties.put(COLUMN, String.valueOf(gameInfo.column()));
+        properties.put(ROW, String.valueOf(gameOption.row()));
+        properties.put(COLUMN, String.valueOf(gameOption.column()));
         return properties;
     }
 

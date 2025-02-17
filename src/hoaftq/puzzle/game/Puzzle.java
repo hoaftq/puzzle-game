@@ -4,16 +4,16 @@
  */
 package hoaftq.puzzle.game;
 
-import hoaftq.puzzle.entity.GameInfoStorage;
-import hoaftq.puzzle.entity.GameInfoValidator;
+import hoaftq.puzzle.entity.GameOptionStorage;
+import hoaftq.puzzle.entity.GameOptionValidator;
 
 /**
  * Entry class of puzzle game
  */
 public class Puzzle {
     public static void main(String[] args) {
-        var gameInfoValidator = new GameInfoValidator();
-        var gameInfoStorage = new GameInfoStorage(gameInfoValidator);
+        var gameInfoValidator = new GameOptionValidator();
+        var gameInfoStorage = new GameOptionStorage(gameInfoValidator);
         var gameFrame = new GameFrame(gameInfoStorage);
         gameFrame.setVisible(true);
     }

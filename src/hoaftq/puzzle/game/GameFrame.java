@@ -7,9 +7,9 @@ package hoaftq.puzzle.game;
 import hoaftq.puzzle.dialog.AboutDialog;
 import hoaftq.puzzle.dialog.OptionDialog;
 import hoaftq.puzzle.dialog.OptionStorage;
-import hoaftq.puzzle.entity.GameInfo;
-import hoaftq.puzzle.entity.GameInfoStorage;
-import hoaftq.puzzle.entity.GameInfoValidator;
+import hoaftq.puzzle.entity.GameOption;
+import hoaftq.puzzle.entity.GameOptionStorage;
+import hoaftq.puzzle.entity.GameOptionValidator;
 import hoaftq.puzzle.utility.WindowUtil;
 
 import javax.swing.*;
@@ -24,13 +24,13 @@ import java.io.IOException;
  */
 public class GameFrame extends JFrame {
 
-    private final GameInfoStorage gameInfoStorage;
+    private final GameOptionStorage gameOptionStorage;
 
     /**
      * Create game frame
      */
-    public GameFrame(GameInfoStorage gameInfoStorage) {
-        this.gameInfoStorage = gameInfoStorage;
+    public GameFrame(GameOptionStorage gameOptionStorage) {
+        this.gameOptionStorage = gameOptionStorage;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setTitle("Puzzle");
         setWindowLookAndFeel();
@@ -42,7 +42,7 @@ public class GameFrame extends JFrame {
 
         // Create game panel with game information get from properties file
         try {
-            gamePanel = new GamePanel(gameInfo = gameInfoStorage.get());
+            gamePanel = new GamePanel(gameOption = gameOptionStorage.get(), new GameInfo());
             add(gamePanel);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null,
@@ -92,7 +92,7 @@ public class GameFrame extends JFrame {
         newGameMenuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                gamePanel.newGame(gameInfo);
+                gamePanel.newGame(gameOption);
             }
         });
 
@@ -104,16 +104,16 @@ public class GameFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 if (optionDialog == null) {
                     var optionStorage = new OptionStorage();
-                    var gameInfoValidator = new GameInfoValidator();
-                    var gameInfoStorage = new GameInfoStorage(gameInfoValidator);
-                    optionDialog = new OptionDialog(GameFrame.this, optionStorage, gameInfoValidator, gameInfoStorage, gameInfo);
+                    var gameInfoValidator = new GameOptionValidator();
+                    var gameInfoStorage = new GameOptionStorage(gameInfoValidator);
+                    optionDialog = new OptionDialog(GameFrame.this, optionStorage, gameInfoValidator, gameInfoStorage, gameOption);
                 }
 
                 if (optionDialog.showDialog()) {
-                    gameInfo = optionDialog.getGameInfo();
+                    gameOption = optionDialog.getGameInfo();
 
                     // new game with game information get from option dialog
-                    gamePanel.newGame(gameInfo);
+                    gamePanel.newGame(gameOption);
                 }
             }
         });
@@ -174,7 +174,7 @@ public class GameFrame extends JFrame {
     /**
      * Game information
      */
-    private GameInfo gameInfo;
+    private GameOption gameOption;
 
     /**
      * Option dialog

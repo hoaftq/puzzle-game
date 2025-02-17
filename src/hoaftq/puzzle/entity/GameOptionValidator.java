@@ -1,6 +1,6 @@
 package hoaftq.puzzle.entity;
 
-public class GameInfoValidator {
+public class GameOptionValidator {
 
     /**
      * Check if a string is a valid value for row or coumn

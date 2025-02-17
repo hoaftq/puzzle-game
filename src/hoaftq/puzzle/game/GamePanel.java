@@ -4,8 +4,7 @@
  */
 package hoaftq.puzzle.game;
 
-import hoaftq.puzzle.entity.GameInfo;
-import hoaftq.puzzle.info.Numbers;
+import hoaftq.puzzle.entity.GameOption;
 import hoaftq.puzzle.piece.ImageTilesView;
 import hoaftq.puzzle.piece.NumberTilesView;
 import hoaftq.puzzle.piece.TilesView;
@@ -55,53 +54,61 @@ public class GamePanel extends JPanel {
     /**
      * Piece object (image piece or number piece)
      */
-    private TilesView pieceObject;
+    private TilesView tilesView;
 
-    /**
-     * Time played
-     */
-    private int time;
+    private GameInfo gameInfo;
 
-    /**
-     * Step moved
-     */
-    private int step;
-
-    /**
-     * Timer count time played
-     */
-    private Timer timer;
-
-    /**
-     * Number object used to display time played and step
-     */
-    private Numbers numbers;
+//    /**
+//     * Time played
+//     */
+//    private int time;
+//
+//    /**
+//     * Step moved
+//     */
+//    private int step;
+//
+//    /**
+//     * Timer count time played
+//     */
+//    private Timer timer;
+//
+//    /**
+//     * Number object used to display time played and step
+//     */
+//    private Numbers numbers;
+//
 
 
     /**
      * Create game panel
      *
-     * @param gameInfo game information
+     * @param gameOption game information
      * @throws IOException an error occurs during reading
      */
-    public GamePanel(GameInfo gameInfo) throws IOException {
-        numbers = new Numbers("numbers.gif");
+    public GamePanel(GameOption gameOption, GameInfo gameInfo) throws IOException {
+        this.gameInfo = gameInfo;
+//        numbers = new Numbers("numbers.gif");
 
         // Add mouse and keyboard listener
         addMouseListener(new MouseHandler());
         setFocusable(true);
         addKeyListener(new KeyHandler());
 
-        // Timer count time played
-        timer = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                time++;
-                repaint();
-            }
+//        // Timer count time played
+//        timer = new Timer(1000, new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//                time++;
+//                repaint();
+//            }
+//        });
+
+        gameInfo.setTickListener((t) -> {
+            repaint();
         });
 
-        newGame(gameInfo);
+        newGame(gameOption);
     }
 
     /**
@@ -112,38 +119,38 @@ public class GamePanel extends JPanel {
      * @param height height of client frame
      */
     public void setGameBoardSize(int width, int height) {
-        pieceObject.setWidth(width - MARGIN_LEFT - MARGIN_RIGHT);
-        pieceObject.setHeight(height - MARGIN_TOP - MARGIN_BOTTOM);
+        tilesView.setWidth(width - MARGIN_LEFT - MARGIN_RIGHT);
+        tilesView.setHeight(height - MARGIN_TOP - MARGIN_BOTTOM);
         repaint();
     }
 
     /**
      * Create new game
      *
-     * @param gameInfo game information
+     * @param gameOption game information
      */
-    public void newGame(GameInfo gameInfo) {
+    public void newGame(GameOption gameOption) {
 
         // Set subdivision size
-        row = gameInfo.row();
-        column = gameInfo.column();
+        row = gameOption.row();
+        column = gameOption.column();
 
         // Initialize image pieces/number pieces
-        if (gameInfo.usedImage()) {
+        if (gameOption.usedImage()) {
             try {
-                pieceObject = new ImageTilesView(gameInfo.row(), gameInfo.column(), this.getWidth(), this.getHeight(), gameInfo.puzzleImage());
+                tilesView = new ImageTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight(), gameOption.puzzleImage());
             } catch (IOException e) {
-                pieceObject = new NumberTilesView(row, column, this.getWidth(),
+                tilesView = new NumberTilesView(row, column, this.getWidth(),
                         this.getHeight());
             }
         } else {
-            pieceObject = new NumberTilesView(row, column, this.getWidth(),
+            tilesView = new NumberTilesView(row, column, this.getWidth(),
                     this.getHeight());
         }
         setGameBoardSize(getWidth(), getHeight());
 
         // Initialize empty piece
-        switch (gameInfo.emptyPosition()) {
+        switch (gameOption.emptyPosition()) {
             case TOP_LEFT:
                 emptyPiece = new Piece((byte) 0, (byte) 0);
                 break;
@@ -159,13 +166,15 @@ public class GamePanel extends JPanel {
         }
 
         // Reset game information
-        time = 0;
-        step = 0;
+//        time = 0;
+//        step = 0;
+        gameInfo.reset();
 
         // Start game
         createGameBoard();
         isPlaying = true;
-        timer.start();
+//        timer.start();
+        gameInfo.startTimer();
         repaint();
     }
 
@@ -178,16 +187,16 @@ public class GamePanel extends JPanel {
             // Draw game board background
             g.setColor(Color.WHITE);
             g.fillRect(MARGIN_LEFT, MARGIN_TOP,
-                    (pieceObject.getWidth() / pieceObject.getRow())
-                    * pieceObject.getRow(),
-                    (pieceObject.getHeight() / pieceObject.getColumn())
-                    * pieceObject.getColumn() + 2);
+                    (tilesView.getWidth() / tilesView.getRow())
+                    * tilesView.getRow(),
+                    (tilesView.getHeight() / tilesView.getColumn())
+                    * tilesView.getColumn() + 2);
 
             // Draw pieces
             for (byte i = 0; i < row; i++) {
                 for (byte j = 0; j < column; j++) {
                     if (emptyPiece.x != i || emptyPiece.y != j) {
-                        pieceObject.drawOne(g, MARGIN_LEFT, MARGIN_TOP, i, j,
+                        tilesView.drawOne(g, MARGIN_LEFT, MARGIN_TOP, i, j,
                                 pieces[i][j].x, pieces[i][j].y);
                     }
                 }
@@ -195,7 +204,7 @@ public class GamePanel extends JPanel {
         } else {
 
             // Draw finished game board
-            pieceObject.drawAll(g, MARGIN_LEFT, MARGIN_TOP);
+            tilesView.drawAll(g, MARGIN_LEFT, MARGIN_TOP);
         }
 
         // Draw game information
@@ -208,15 +217,17 @@ public class GamePanel extends JPanel {
      * @param g graphics
      */
     private void paintInformation(Graphics g) {
-        int y1 = MARGIN_TOP + pieceObject.getHeight();
+        int y1 = MARGIN_TOP + tilesView.getHeight();
         int y2 = y1 + MARGIN_BOTTOM;
 
         // Draw time played
-        numbers.drawNumber(g, 10, y1, y2, time, 4);
-
-        // Draw played step
-        numbers.drawNumberRightAlign(g, MARGIN_LEFT + pieceObject.getWidth()
-                                        + MARGIN_RIGHT - 12, y1, y2, step);
+//        numbers.drawNumber(g, 10, y1, y2, time, 4);
+//
+//        // Draw played step
+//        numbers.drawNumberRightAlign(g, MARGIN_LEFT + tilesView.getWidth()
+//                                        + MARGIN_RIGHT - 12, y1, y2, step);
+        gameInfo.paintInformation(g, MARGIN_LEFT + tilesView.getWidth()
+                                        + MARGIN_RIGHT, y1, y2);
     }
 
     /**
@@ -347,7 +358,8 @@ public class GamePanel extends JPanel {
 
         // If game finished, stop timer and toggle game state
         if (isFinished) {
-            timer.stop();
+//            timer.stop();
+            gameInfo.stopTimer();
             isPlaying = false;
         }
     }
@@ -361,8 +373,8 @@ public class GamePanel extends JPanel {
      * board)
      */
     private Piece getPieceFromMousePos(int x, int y) {
-        int tempX = (x - MARGIN_LEFT) * row / pieceObject.getWidth();
-        int tempY = (y - MARGIN_TOP) * column / pieceObject.getHeight();
+        int tempX = (x - MARGIN_LEFT) * row / tilesView.getWidth();
+        int tempY = (y - MARGIN_TOP) * column / tilesView.getHeight();
 
         if (tempX < 0 || tempX > row - 1 || tempY < 0 || tempY > column - 1) {
             return null;
@@ -390,7 +402,8 @@ public class GamePanel extends JPanel {
                 + Math.abs(mousePiece.y - emptyPiece.y) == 1) {
                 pieces[emptyPiece.x][emptyPiece.y] = pieces[mousePiece.x][mousePiece.y];
                 emptyPiece = mousePiece;
-                step++;
+//                step++;
+                gameInfo.increaseStep();
                 checkFinished();
                 repaint();
             }
@@ -411,7 +424,8 @@ public class GamePanel extends JPanel {
                     if (emptyPiece.x < row - 1) {
                         pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x + 1][emptyPiece.y];
                         emptyPiece.x++;
-                        step++;
+//                        step++;
+                        gameInfo.increaseStep();
                         checkFinished();
                         repaint();
                     }
@@ -422,7 +436,8 @@ public class GamePanel extends JPanel {
                     if (emptyPiece.x != 0) {
                         pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x - 1][emptyPiece.y];
                         emptyPiece.x--;
-                        step++;
+//                        step++;
+                        gameInfo.increaseStep();
                         checkFinished();
                         repaint();
                     }
@@ -433,7 +448,8 @@ public class GamePanel extends JPanel {
                     if (emptyPiece.y != 0) {
                         pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x][emptyPiece.y - 1];
                         emptyPiece.y--;
-                        step++;
+//                        step++;
+                        gameInfo.increaseStep();
                         checkFinished();
                         repaint();
                     }
@@ -444,7 +460,8 @@ public class GamePanel extends JPanel {
                     if (emptyPiece.y < row - 1) {
                         pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x][emptyPiece.y + 1];
                         emptyPiece.y++;
-                        step++;
+//                        step++;
+                        gameInfo.increaseStep();
                         checkFinished();
                         repaint();
                     }

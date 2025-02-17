@@ -17,10 +17,10 @@ import java.io.File;
  */
 public class OptionDialog extends JDialog {
     private final OptionStorage optionStorage;
-    private final GameInfoValidator validator;
+    private final GameOptionValidator validator;
 
-    private final GameInfoStorage gameInfoStorage;
-    private GameInfo gameInfo;
+    private final GameOptionStorage gameOptionStorage;
+    private GameOption gameOption;
 
     private JRadioButton imageRadioButton;
 
@@ -45,22 +45,22 @@ public class OptionDialog extends JDialog {
      */
     private boolean isOK;
 
-    public GameInfo getGameInfo() {
-        return gameInfo;
+    public GameOption getGameInfo() {
+        return gameOption;
     }
 
     /**
      * Create option dialog
      *
      * @param owner    owner of dialog
-     * @param gameInfo game information
+     * @param gameOption game information
      */
-    public OptionDialog(JFrame owner, OptionStorage optionStorage, GameInfoValidator validator, GameInfoStorage gameInfoStorage, GameInfo gameInfo) {
+    public OptionDialog(JFrame owner, OptionStorage optionStorage, GameOptionValidator validator, GameOptionStorage gameOptionStorage, GameOption gameOption) {
         super(owner, "Customize Game", true);
         this.optionStorage = optionStorage;
         this.validator = validator;
-        this.gameInfoStorage = gameInfoStorage;
-        this.gameInfo = gameInfo;
+        this.gameOptionStorage = gameOptionStorage;
+        this.gameOption = gameOption;
 
         createLayout();
     }
@@ -85,7 +85,7 @@ public class OptionDialog extends JDialog {
 
         setResizable(false);
 
-        showImageOrNumbers(gameInfo.usedImage(), gameInfo.puzzleImage());
+        showImageOrNumbers(gameOption.usedImage(), gameOption.puzzleImage());
     }
 
     /**
@@ -96,11 +96,11 @@ public class OptionDialog extends JDialog {
         var optionButtonGroup = new ButtonGroup();
 
         imageRadioButton = createImageNumberRadioButton(
-                optionButtonGroup, "Use image", gameInfo.usedImage());
+                optionButtonGroup, "Use image", gameOption.usedImage());
         panel.add(imageRadioButton);
 
         var numberRadioButton = createImageNumberRadioButton(
-                optionButtonGroup, "Use number", !gameInfo.usedImage());
+                optionButtonGroup, "Use number", !gameOption.usedImage());
         panel.add(numberRadioButton);
 
         return panel;
@@ -140,7 +140,7 @@ public class OptionDialog extends JDialog {
         var panel = new JPanel(new BorderLayout());
 
         // Create panel display image
-        imageNumbersPanel = new ImageNumbersPanel(gameInfo.row(), gameInfo.column(), 320, 200);
+        imageNumbersPanel = new ImageNumbersPanel(gameOption.row(), gameOption.column(), 320, 200);
         panel.add(imageNumbersPanel, BorderLayout.NORTH);
 
         // Create panel browse image
@@ -153,7 +153,7 @@ public class OptionDialog extends JDialog {
 
         puzzleImageList = new JList<>(listModel);
         puzzleImageList.setFixedCellWidth(200);
-        puzzleImageList.setSelectedValue(gameInfo.puzzleImage(), true);
+        puzzleImageList.setSelectedValue(gameOption.puzzleImage(), true);
         puzzleImageList.addListSelectionListener(e -> {
             if (!imageNumbersPanel.displayImage(puzzleImageList.getSelectedValue())) {
                 listModel.removeElement(puzzleImageList.getSelectedValue());
@@ -280,11 +280,11 @@ public class OptionDialog extends JDialog {
                 return;
             }
 
-            gameInfo = new GameInfo(usedImage, puzzleImageList.getSelectedValue(), Byte.parseByte(rowTextField.getText()),
+            gameOption = new GameOption(usedImage, puzzleImageList.getSelectedValue(), Byte.parseByte(rowTextField.getText()),
                     Byte.parseByte(colTextField.getText()), EmptyTilePosition.BOTTOM_RIGHT);
 
             // Save game information to data file
-            gameInfoStorage.save(gameInfo);
+            gameOptionStorage.save(gameOption);
 
             // FIXME
 //            imageNumbersPanel.displayImage(usedImage ? gameInfo.puzzleImage() : null);
@@ -302,9 +302,9 @@ public class OptionDialog extends JDialog {
     private JPanel createRowColumnPanel() {
         var panel = new JPanel(new GridLayout(2, 2, 1, 6));
         panel.add(new JLabel("Rows"));
-        panel.add(rowTextField = new JTextField(Byte.toString(gameInfo.row()), 2));
+        panel.add(rowTextField = new JTextField(Byte.toString(gameOption.row()), 2));
         panel.add(new JLabel("Columns"));
-        panel.add(colTextField = new JTextField(Byte.toString(gameInfo.column()), 2));
+        panel.add(colTextField = new JTextField(Byte.toString(gameOption.column()), 2));
         return panel;
     }
 }
