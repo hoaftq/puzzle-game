@@ -11,11 +11,11 @@ import hoaftq.puzzle.piece.TilesView;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Random;
 
 /**
  * Panel display game board
@@ -31,25 +31,6 @@ public class GamePanel extends JPanel {
      */
     private boolean isPlaying = false;
 
-    /**
-     * Subdivision horizontal
-     */
-    private byte row;
-
-    /**
-     * Subdivision vertical
-     */
-    private byte column;
-
-    /**
-     * Piece game board
-     */
-    private Piece[][] pieces;
-
-    /**
-     * Empty piece
-     */
-    private Piece emptyPiece;
 
     /**
      * Piece object (image piece or number piece)
@@ -58,27 +39,7 @@ public class GamePanel extends JPanel {
 
     private GameInfo gameInfo;
 
-//    /**
-//     * Time played
-//     */
-//    private int time;
-//
-//    /**
-//     * Step moved
-//     */
-//    private int step;
-//
-//    /**
-//     * Timer count time played
-//     */
-//    private Timer timer;
-//
-//    /**
-//     * Number object used to display time played and step
-//     */
-//    private Numbers numbers;
-//
-
+    private GameLogic gameLogic;
 
     /**
      * Create game panel
@@ -88,21 +49,11 @@ public class GamePanel extends JPanel {
      */
     public GamePanel(GameOption gameOption, GameInfo gameInfo) throws IOException {
         this.gameInfo = gameInfo;
-//        numbers = new Numbers("numbers.gif");
 
         // Add mouse and keyboard listener
         addMouseListener(new MouseHandler());
         setFocusable(true);
         addKeyListener(new KeyHandler());
-
-//        // Timer count time played
-//        timer = new Timer(1000, new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//                time++;
-//                repaint();
-//            }
-//        });
 
         gameInfo.setTickListener((t) -> {
             repaint();
@@ -130,51 +81,29 @@ public class GamePanel extends JPanel {
      * @param gameOption game information
      */
     public void newGame(GameOption gameOption) {
-
-        // Set subdivision size
-        row = gameOption.row();
-        column = gameOption.column();
+        gameLogic = new GameLogic(gameOption.row(), gameOption.column(), gameOption.emptyPosition());
 
         // Initialize image pieces/number pieces
         if (gameOption.usedImage()) {
             try {
                 tilesView = new ImageTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight(), gameOption.puzzleImage());
             } catch (IOException e) {
-                tilesView = new NumberTilesView(row, column, this.getWidth(),
-                        this.getHeight());
+                tilesView = new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
             }
         } else {
-            tilesView = new NumberTilesView(row, column, this.getWidth(),
-                    this.getHeight());
+            tilesView = new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
         }
+
         setGameBoardSize(getWidth(), getHeight());
 
-        // Initialize empty piece
-        switch (gameOption.emptyPosition()) {
-            case TOP_LEFT:
-                emptyPiece = new Piece((byte) 0, (byte) 0);
-                break;
-            case TOP_RIGHT:
-                emptyPiece = new Piece((byte) (row - 1), (byte) 0);
-                break;
-            case BOTTOM_RIGHT:
-                emptyPiece = new Piece((byte) (row - 1), (byte) (column - 1));
-                break;
-            case BOTTOM_LEFT:
-                emptyPiece = new Piece((byte) 0, (byte) (column - 1));
-                break;
-        }
-
         // Reset game information
-//        time = 0;
-//        step = 0;
         gameInfo.reset();
+        gameInfo.startTimer();
 
         // Start game
-        createGameBoard();
+        gameLogic.createGameBoard();
         isPlaying = true;
-//        timer.start();
-        gameInfo.startTimer();
+
         repaint();
     }
 
@@ -186,18 +115,19 @@ public class GamePanel extends JPanel {
 
             // Draw game board background
             g.setColor(Color.WHITE);
-            g.fillRect(MARGIN_LEFT, MARGIN_TOP,
-                    (tilesView.getWidth() / tilesView.getRow())
-                    * tilesView.getRow(),
-                    (tilesView.getHeight() / tilesView.getColumn())
-                    * tilesView.getColumn() + 2);
+            g.fillRect(MARGIN_LEFT, MARGIN_TOP, tilesView.getWidth(), tilesView.getHeight() + 2);
 
-            // Draw pieces
-            for (byte i = 0; i < row; i++) {
-                for (byte j = 0; j < column; j++) {
-                    if (emptyPiece.x != i || emptyPiece.y != j) {
-                        tilesView.drawOne(g, MARGIN_LEFT, MARGIN_TOP, i, j,
-                                pieces[i][j].x, pieces[i][j].y);
+            // Draw tiles
+            for (byte i = 0; i < gameLogic.getRow(); i++) {
+                for (byte j = 0; j < gameLogic.getColumn(); j++) {
+                    if (gameLogic.emptyTilePosition.x() != i || gameLogic.emptyTilePosition.y() != j) {
+                        tilesView.drawOne(g,
+                                MARGIN_LEFT,
+                                MARGIN_TOP,
+                                i,
+                                j,
+                                gameLogic.tilePositions[i][j].x(),
+                                gameLogic.tilePositions[i][j].y());
                     }
                 }
             }
@@ -220,149 +150,10 @@ public class GamePanel extends JPanel {
         int y1 = MARGIN_TOP + tilesView.getHeight();
         int y2 = y1 + MARGIN_BOTTOM;
 
-        // Draw time played
-//        numbers.drawNumber(g, 10, y1, y2, time, 4);
-//
-//        // Draw played step
-//        numbers.drawNumberRightAlign(g, MARGIN_LEFT + tilesView.getWidth()
-//                                        + MARGIN_RIGHT - 12, y1, y2, step);
         gameInfo.paintInformation(g, MARGIN_LEFT + tilesView.getWidth()
-                                        + MARGIN_RIGHT, y1, y2);
+                                     + MARGIN_RIGHT, y1, y2);
     }
 
-    /**
-     * Create new game board
-     */
-    private void createGameBoard() {
-
-        // Initialize original game board
-        pieces = new Piece[row][column];
-        for (byte i = 0; i < row; i++) {
-            for (byte j = 0; j < column; j++) {
-                pieces[i][j] = new Piece(i, j);
-            }
-        }
-
-        // Add game board to a piece list
-        LinkedList<Piece> pieceList = new LinkedList<Piece>();
-        for (Piece[] pa : pieces) {
-            pieceList.addAll(Arrays.asList(pa));
-        }
-        pieceList.remove(emptyPiece);
-
-        // Random move from empty piece to all piece on the pieces list
-        Piece saveEmptyPiece = emptyPiece.clone();
-        Random random = new Random();
-        while (pieceList.size() > 0) {
-            int index = random.nextInt(pieceList.size());
-            move(pieceList.get(index));
-            pieceList.remove(index);
-        }
-
-        // Move empty piece to default position
-        move(saveEmptyPiece);
-    }
-
-    /**
-     * Random move from empty piece to new piece<br/>
-     * Used to disturbance piece
-     *
-     * @param piece destination move
-     */
-    private void move(Piece piece) {
-        int stepX;
-        int stepY;
-
-        // Calculate horizontal move module step
-        if (emptyPiece.x < piece.x) {
-            stepX = 1;
-        } else if (emptyPiece.x > piece.x) {
-            stepX = -1;
-        } else {
-            stepX = 0;
-        }
-
-        // Calculate vertical move module step
-        if (emptyPiece.y < piece.y) {
-            stepY = 1;
-        } else if (emptyPiece.y > piece.y) {
-            stepY = -1;
-        } else {
-            stepY = 0;
-        }
-
-        Random random = new Random();
-        while (true) {
-            if (random.nextBoolean()) {
-
-                // Move horizontally 1 step
-                pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x
-                                                            + stepX][emptyPiece.y];
-                emptyPiece.x += stepX;
-
-                // If can't move horizontally, move vertically until the move
-                // completed
-                if (emptyPiece.x == piece.x) {
-                    while (piece.y != emptyPiece.y) {
-                        pieces[piece.x][emptyPiece.y] = pieces[piece.x][emptyPiece.y
-                                                                        + stepY];
-                        emptyPiece.y += stepY;
-                    }
-
-                    break;
-                }
-            } else {
-
-                // Move vertically 1 step
-                pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x][emptyPiece.y
-                                                                          + stepY];
-                emptyPiece.y += stepY;
-
-                // If can't move vertically, move horizontally until the move
-                // completed
-                if (emptyPiece.y == piece.y) {
-                    while (piece.x != emptyPiece.x) {
-                        pieces[emptyPiece.x][piece.y] = pieces[emptyPiece.x
-                                                               + stepX][piece.y];
-                        emptyPiece.x += stepX;
-                    }
-
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
-     * Check game finished
-     */
-    private void checkFinished() {
-        boolean isFinished = true;
-
-        // Check pieces on ySplit - 1 rows on the top
-        for (int i = 0; i < row; i++) {
-            for (int j = 0; j < column - 1; j++) {
-                if (pieces[i][j].x != i || pieces[i][j].y != j) {
-                    isFinished = false;
-                }
-            }
-        }
-
-        // Check pieces on the bottom row
-        for (int i = 0; i < row - 1; i++) {
-            if (pieces[i][column - 1].x != i
-                || pieces[i][column - 1].y != column - 1) {
-                isFinished = false;
-            }
-        }
-
-        // If game finished, stop timer and toggle game state
-        if (isFinished) {
-//            timer.stop();
-            gameInfo.stopTimer();
-            isPlaying = false;
-        }
-    }
 
     /**
      * Get piece from mouse position
@@ -372,15 +163,15 @@ public class GamePanel extends JPanel {
      * @return piece where mouse position (null if mouse clicked outside game
      * board)
      */
-    private Piece getPieceFromMousePos(int x, int y) {
-        int tempX = (x - MARGIN_LEFT) * row / tilesView.getWidth();
-        int tempY = (y - MARGIN_TOP) * column / tilesView.getHeight();
+    private TilePosition getPieceFromMousePos(int x, int y) {
+        int tempX = (x - MARGIN_LEFT) * gameLogic.getRow() / tilesView.getWidth();
+        int tempY = (y - MARGIN_TOP) * gameLogic.getColumn() / tilesView.getHeight();
 
-        if (tempX < 0 || tempX > row - 1 || tempY < 0 || tempY > column - 1) {
+        if (tempX < 0 || tempX > gameLogic.getRow() - 1 || tempY < 0 || tempY > gameLogic.getColumn() - 1) {
             return null;
         }
 
-        return new Piece((byte) tempX, (byte) tempY);
+        return new TilePosition((byte) tempX, (byte) tempY);
     }
 
 
@@ -393,18 +184,20 @@ public class GamePanel extends JPanel {
         public void mouseClicked(MouseEvent e) {
 
             // Get piece where mouse clicked
-            Piece mousePiece = getPieceFromMousePos(e.getX(), e.getY());
-            if (mousePiece == null)
+            TilePosition mouseTilePosition = getPieceFromMousePos(e.getX(), e.getY());
+            if (mouseTilePosition == null)
                 return;
 
             // If clicked piece is neighbor empty piece then move it
-            if (Math.abs(mousePiece.x - emptyPiece.x)
-                + Math.abs(mousePiece.y - emptyPiece.y) == 1) {
-                pieces[emptyPiece.x][emptyPiece.y] = pieces[mousePiece.x][mousePiece.y];
-                emptyPiece = mousePiece;
+            if (Math.abs(mouseTilePosition.x() - gameLogic.emptyTilePosition.x())
+                + Math.abs(mouseTilePosition.y() - gameLogic.emptyTilePosition.y()) == 1) {
+                gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y()] = gameLogic.tilePositions[mouseTilePosition.x()][mouseTilePosition.y()];
+                gameLogic.emptyTilePosition = mouseTilePosition;
 //                step++;
                 gameInfo.increaseStep();
                 checkFinished();
+                // If game finished, stop timer and toggle game state
+//            timer.stop();
                 repaint();
             }
         }
@@ -421,9 +214,10 @@ public class GamePanel extends JPanel {
                 case KeyEvent.VK_LEFT:
 
                     // If have a piece on the right empty piece, move it to left
-                    if (emptyPiece.x < row - 1) {
-                        pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x + 1][emptyPiece.y];
-                        emptyPiece.x++;
+                    if (gameLogic.emptyTilePosition.x() < gameLogic.getRow() - 1) {
+                        gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y()] = gameLogic.tilePositions[gameLogic.emptyTilePosition.x() + 1][gameLogic.emptyTilePosition.y()];
+//                        emptyTilePosition.x++;
+                        gameLogic.emptyTilePosition = gameLogic.emptyTilePosition.moveHorizontally(1);
 //                        step++;
                         gameInfo.increaseStep();
                         checkFinished();
@@ -433,9 +227,10 @@ public class GamePanel extends JPanel {
                 case KeyEvent.VK_RIGHT:
 
                     // If have a piece on the left empty piece, move it to right
-                    if (emptyPiece.x != 0) {
-                        pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x - 1][emptyPiece.y];
-                        emptyPiece.x--;
+                    if (gameLogic.emptyTilePosition.x() != 0) {
+                        gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y()] = gameLogic.tilePositions[gameLogic.emptyTilePosition.x() - 1][gameLogic.emptyTilePosition.y()];
+//                        emptyTilePosition.x--;
+                        gameLogic.emptyTilePosition = gameLogic.emptyTilePosition.moveHorizontally(-1);
 //                        step++;
                         gameInfo.increaseStep();
                         checkFinished();
@@ -445,9 +240,10 @@ public class GamePanel extends JPanel {
                 case KeyEvent.VK_DOWN:
 
                     // If have a piece on the top empty piece, move it to down
-                    if (emptyPiece.y != 0) {
-                        pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x][emptyPiece.y - 1];
-                        emptyPiece.y--;
+                    if (gameLogic.emptyTilePosition.y() != 0) {
+                        gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y()] = gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y() - 1];
+//                        emptyTilePosition.y--;
+                        gameLogic.emptyTilePosition = gameLogic.emptyTilePosition.moveVertically(-1);
 //                        step++;
                         gameInfo.increaseStep();
                         checkFinished();
@@ -457,9 +253,10 @@ public class GamePanel extends JPanel {
                 case KeyEvent.VK_UP:
 
                     // If have a piece on the bottom empty piece, move it to up
-                    if (emptyPiece.y < row - 1) {
-                        pieces[emptyPiece.x][emptyPiece.y] = pieces[emptyPiece.x][emptyPiece.y + 1];
-                        emptyPiece.y++;
+                    if (gameLogic.emptyTilePosition.y() < gameLogic.getRow() - 1) {
+                        gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y()] = gameLogic.tilePositions[gameLogic.emptyTilePosition.x()][gameLogic.emptyTilePosition.y() + 1];
+//                        emptyTilePosition.y++;
+                        gameLogic.emptyTilePosition = gameLogic.emptyTilePosition.moveVertically(1);
 //                        step++;
                         gameInfo.increaseStep();
                         checkFinished();
@@ -470,36 +267,10 @@ public class GamePanel extends JPanel {
         }
     }
 
-    /**
-     * Describe a piece in game board
-     */
-    private class Piece {
-        private byte x;
-        private byte y;
-
-        public Piece(byte x, byte y) {
-            this.x = x;
-            this.y = y;
-        }
-
-        @Override
-        protected Piece clone() {
-            return new Piece(x, y);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (!(o instanceof Piece)) {
-                return false;
-            }
-
-            Piece p = (Piece) o;
-            return x == p.x && y == p.y;
-        }
-
-        @Override
-        public int hashCode() {
-            return x * 10 + y;
+    private void checkFinished() {
+        if (gameLogic.checkFinished()) {
+            gameInfo.stopTimer();
+            isPlaying = false;
         }
     }
 }
