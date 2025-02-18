@@ -1,6 +1,6 @@
 package hoaftq.puzzle.info;
 
-import hoaftq.puzzle.entity.PuzzleImage;
+import hoaftq.puzzle.common.PuzzleImage;
 
 import java.awt.*;
 import java.io.IOException;

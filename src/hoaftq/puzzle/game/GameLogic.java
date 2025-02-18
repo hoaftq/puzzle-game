@@ -1,7 +1,5 @@
 package hoaftq.puzzle.game;
 
-import hoaftq.puzzle.entity.EmptyTilePosition;
-
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Random;
@@ -166,7 +164,7 @@ public class GameLogic {
     /**
      * Check game finished
      */
-    public boolean checkFinished() {
+    public boolean hasFinished() {
         boolean isFinished = true;
 
         // Check pieces on ySplit - 1 rows on the top
@@ -188,4 +186,55 @@ public class GameLogic {
 
         return isFinished;
     }
+
+    public boolean moveEmptyPositionToRight() {
+        if (emptyTilePosition.x() < row - 1) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x() + 1][emptyTilePosition.y()];
+            emptyTilePosition = emptyTilePosition.moveHorizontally(1);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean moveEmptyPositionToLeft() {
+        if (emptyTilePosition.x() != 0) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x() - 1][emptyTilePosition.y()];
+            emptyTilePosition = emptyTilePosition.moveHorizontally(-1);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean moveEmptyPositionUp() {
+        if (emptyTilePosition.y() != 0) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() - 1];
+            emptyTilePosition = emptyTilePosition.moveVertically(-1);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean moveEmptyPositionDown() {
+        if (emptyTilePosition.y() < getRow() - 1) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + 1];
+            emptyTilePosition = emptyTilePosition.moveVertically(1);
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean moveTile(TilePosition position) {
+        if (Math.abs(position.x() - emptyTilePosition.x()) + Math.abs(position.y() - emptyTilePosition.y()) == 1) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[position.x()][position.y()];
+            emptyTilePosition = position;
+            return true;
+        }
+
+        return false;
+    }
 }
+

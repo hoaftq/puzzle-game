@@ -1,9 +1,9 @@
 /**
  * Puzzle game using Java AWT
  */
-package hoaftq.puzzle.piece;
+package hoaftq.puzzle.tile;
 
-import hoaftq.puzzle.entity.PuzzleImage;
+import hoaftq.puzzle.common.PuzzleImage;
 
 import java.awt.*;
 import java.io.IOException;

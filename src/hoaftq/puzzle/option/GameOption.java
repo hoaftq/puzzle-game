@@ -1,7 +1,10 @@
 /**
  * Puzzle game using Java AWT
  */
-package hoaftq.puzzle.entity;
+package hoaftq.puzzle.option;
+
+import hoaftq.puzzle.game.EmptyTilePosition;
+import hoaftq.puzzle.common.PuzzleImage;
 
 public record GameOption(
         boolean usedImage,

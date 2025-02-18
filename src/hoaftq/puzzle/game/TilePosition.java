@@ -1,14 +1,6 @@
 package hoaftq.puzzle.game;
 
-/**
- * Describe a piece in game board
- */
-record TilePosition(byte x, byte y) {
-
-//        @Override
-//        protected TilePosition clone() {
-//            return new TilePosition(x, y);
-//        }
+public record TilePosition(byte x, byte y) {
 
     public TilePosition getLeft() {
         return new TilePosition((byte) (x - 1), y);

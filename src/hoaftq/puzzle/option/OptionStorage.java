@@ -1,6 +1,6 @@
-package hoaftq.puzzle.dialog;
+package hoaftq.puzzle.option;
 
-import hoaftq.puzzle.entity.PuzzleImage;
+import hoaftq.puzzle.common.PuzzleImage;
 
 import java.io.*;
 import java.util.List;

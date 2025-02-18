@@ -4,12 +4,13 @@
  */
 package hoaftq.puzzle.game;
 
-import hoaftq.puzzle.dialog.AboutDialog;
-import hoaftq.puzzle.dialog.OptionDialog;
-import hoaftq.puzzle.dialog.OptionStorage;
-import hoaftq.puzzle.entity.GameOption;
-import hoaftq.puzzle.entity.GameOptionStorage;
-import hoaftq.puzzle.entity.GameOptionValidator;
+import hoaftq.puzzle.AboutDialog;
+import hoaftq.puzzle.info.GameInfoView;
+import hoaftq.puzzle.option.OptionDialog;
+import hoaftq.puzzle.option.OptionStorage;
+import hoaftq.puzzle.option.GameOption;
+import hoaftq.puzzle.option.GameOptionStorage;
+import hoaftq.puzzle.option.GameOptionValidator;
 import hoaftq.puzzle.utility.WindowUtil;
 
 import javax.swing.*;
@@ -42,7 +43,7 @@ public class GameFrame extends JFrame {
 
         // Create game panel with game information get from properties file
         try {
-            gamePanel = new GamePanel(gameOption = gameOptionStorage.get(), new GameInfo());
+            gamePanel = new GamePanel(gameOption = gameOptionStorage.get(), new GameInfoView());
             add(gamePanel);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null,

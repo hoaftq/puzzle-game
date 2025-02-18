@@ -1,4 +1,7 @@
-package hoaftq.puzzle.entity;
+package hoaftq.puzzle.option;
+
+import hoaftq.puzzle.game.EmptyTilePosition;
+import hoaftq.puzzle.common.PuzzleImage;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -1,7 +1,7 @@
 /**
  * Puzzle game using Java AWT
  */
-package hoaftq.puzzle.entity;
+package hoaftq.puzzle.game;
 
 /**
  * Position of empty tile

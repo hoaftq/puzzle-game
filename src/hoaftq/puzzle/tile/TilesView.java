@@ -1,7 +1,7 @@
 /**
  * Puzzle game using Java AWT
  */
-package hoaftq.puzzle.piece;
+package hoaftq.puzzle.tile;
 
 import java.awt.*;
 

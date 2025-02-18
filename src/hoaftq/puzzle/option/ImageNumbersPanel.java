@@ -1,9 +1,9 @@
-package hoaftq.puzzle.dialog;
+package hoaftq.puzzle.option;
 
-import hoaftq.puzzle.entity.PuzzleImage;
-import hoaftq.puzzle.piece.ImageTilesView;
-import hoaftq.puzzle.piece.NumberTilesView;
-import hoaftq.puzzle.piece.TilesView;
+import hoaftq.puzzle.common.PuzzleImage;
+import hoaftq.puzzle.tile.ImageTilesView;
+import hoaftq.puzzle.tile.NumberTilesView;
+import hoaftq.puzzle.tile.TilesView;
 
 import javax.swing.*;
 import java.awt.*;

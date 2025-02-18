@@ -2,7 +2,7 @@
  * Puzzle game using Java AWT
  * Copyright @ 2011 Trac Quang Hoa
  */
-package hoaftq.puzzle.piece;
+package hoaftq.puzzle.tile;
 
 import java.awt.*;
 

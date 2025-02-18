@@ -1,4 +1,4 @@
-package hoaftq.puzzle.entity;
+package hoaftq.puzzle.option;
 
 public class GameOptionValidator {
 
