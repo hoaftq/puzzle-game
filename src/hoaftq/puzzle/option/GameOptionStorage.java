@@ -1,7 +1,7 @@
 package hoaftq.puzzle.option;
 
-import hoaftq.puzzle.game.EmptyTilePosition;
 import hoaftq.puzzle.common.PuzzleImage;
+import hoaftq.puzzle.game.EmptyTilePosition;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -98,7 +98,7 @@ public class GameOptionStorage {
         var properties = new Properties();
         String imageType;
         if (gameOption.usedImage()) {
-            properties.put(IMAGE_NAME_KEY, gameOption.puzzleImage().getFileName());
+            properties.put(IMAGE_NAME_KEY, gameOption.puzzleImage().fileName());
             imageType = gameOption.puzzleImage().isInternalResource()
                     ? IMAGE_TYPE_USE_INTERNAL_IMAGE
                     : IMAGE_TYPE_USE_EXTERNAL_IMAGE;

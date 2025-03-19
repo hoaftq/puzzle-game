@@ -10,12 +10,12 @@ public class GameInfoView {
     private int step;
 
     private final Timer timer;
-    private final Numbers numbers;
+    private final NumbersView numbersView;
 
     private Consumer<Integer> tickListener;
 
     public GameInfoView() throws IOException {
-        numbers = new Numbers("numbers.gif");
+        numbersView = new NumbersView("numbers.gif");
         timer = new Timer(1000, e -> {
             elapsedTime++;
             if (tickListener != null) {
@@ -48,9 +48,9 @@ public class GameInfoView {
     public void paint(Graphics g, int width, int y1, int y2) {
 
         // Draw elapsed time
-        numbers.drawNumber(g, 10, y1, y2, elapsedTime, 4);
+        numbersView.drawNumber(g, 10, y1, y2, elapsedTime, 4);
 
         // Draw played step
-        numbers.drawNumberRightAlign(g, width - 12, y1, y2, step);
+        numbersView.drawNumberRightAlign(g, width - 12, y1, y2, step);
     }
 }

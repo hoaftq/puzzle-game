@@ -1,6 +1,5 @@
 /**
  * Puzzle game using Java AWT
- * Copyright @ 2011 Trac Quang Hoa
  */
 package hoaftq.puzzle.game;
 
@@ -27,19 +26,15 @@ public class GamePanel extends JPanel {
     private final static int MARGIN_RIGHT = 0;
     private final static int MARGIN_BOTTOM = 50;
 
-    private boolean isPlaying = false;
-
+    private final GameInfoView gameInfoView;
     private TilesView tilesView;
-
-    private GameInfoView gameInfoView;
-
     private GameLogic gameLogic;
+
+    private boolean isPlaying = false;
 
     public GamePanel(GameOption gameOption, GameInfoView gameInfoView) {
         this.gameInfoView = gameInfoView;
-        gameInfoView.registerTickListener((t) -> {
-            repaint();
-        });
+        this.gameInfoView.registerTickListener(t -> repaint());
 
         addMouseListener(new MouseHandler());
         addKeyListener(new KeyHandler());
@@ -64,24 +59,25 @@ public class GamePanel extends JPanel {
 
     /**
      * Create new game
-     *
-     * @param gameOption game information
      */
     public void newGame(GameOption gameOption) {
         gameLogic = new GameLogic(gameOption.row(), gameOption.column(), gameOption.emptyPosition());
 
-        // Initialize image pieces/number pieces
         if (gameOption.usedImage()) {
             try {
-                tilesView = new ImageTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight(), gameOption.puzzleImage());
-            } catch (IOException e) {
-                tilesView = new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
+                tilesView = new ImageTilesView(
+                        gameOption.row(),
+                        gameOption.column(),
+                        this.getWidth(),
+                        this.getHeight(),
+                        gameOption.puzzleImage());
+            } catch (IOException ignored) {
             }
-        } else {
-            tilesView = new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
         }
 
-        setGameBoardSize(getWidth(), getHeight());
+        if (tilesView == null) {
+            tilesView = new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
+        }
 
         // Reset game information
         gameInfoView.reset();
@@ -91,7 +87,7 @@ public class GamePanel extends JPanel {
         gameLogic.createGameBoard();
         isPlaying = true;
 
-        repaint();
+        setGameBoardSize(getWidth(), getHeight());
     }
 
     @Override
@@ -107,19 +103,20 @@ public class GamePanel extends JPanel {
             // Draw tiles
             for (byte i = 0; i < gameLogic.getRow(); i++) {
                 for (byte j = 0; j < gameLogic.getColumn(); j++) {
-                    if (gameLogic.emptyTilePosition.x() != i || gameLogic.emptyTilePosition.y() != j) {
-                        tilesView.drawOne(g,
-                                MARGIN_LEFT,
-                                MARGIN_TOP,
-                                i,
-                                j,
-                                gameLogic.tilePositions[i][j].x(),
-                                gameLogic.tilePositions[i][j].y());
+                    if (gameLogic.getEmptyTilePosition().x() == i && gameLogic.getEmptyTilePosition().y() == j) {
+                        continue;
                     }
+
+                    tilesView.drawOne(g,
+                            MARGIN_LEFT,
+                            MARGIN_TOP,
+                            i,
+                            j,
+                            gameLogic.getAt(i, j).x(),
+                            gameLogic.getAt(i, j).y());
                 }
             }
         } else {
-
             // Draw finished game board
             tilesView.drawAll(g, MARGIN_LEFT, MARGIN_TOP);
         }
@@ -128,34 +125,20 @@ public class GamePanel extends JPanel {
         paintInformation(g);
     }
 
-    /**
-     * Draw game information
-     *
-     * @param g graphics
-     */
     private void paintInformation(Graphics g) {
         int y1 = MARGIN_TOP + tilesView.getHeight();
         int y2 = y1 + MARGIN_BOTTOM;
         gameInfoView.paint(g, MARGIN_LEFT + tilesView.getWidth() + MARGIN_RIGHT, y1, y2);
     }
 
-    /**
-     * Get piece from mouse position
-     *
-     * @param x horizontal mouse position
-     * @param y vertical mouse position
-     * @return piece where mouse position (null if mouse clicked outside game
-     * board)
-     */
-    private TilePosition getPieceFromMousePos(int x, int y) {
-        int tempX = (x - MARGIN_LEFT) * gameLogic.getRow() / tilesView.getWidth();
-        int tempY = (y - MARGIN_TOP) * gameLogic.getColumn() / tilesView.getHeight();
-
-        if (tempX < 0 || tempX > gameLogic.getRow() - 1 || tempY < 0 || tempY > gameLogic.getColumn() - 1) {
-            return null;
+    private void updateAfterMoving() {
+        gameInfoView.increaseStep();
+        if (gameLogic.hasFinished()) {
+            gameInfoView.stopTimer();
+            isPlaying = false;
         }
 
-        return new TilePosition((byte) tempX, (byte) tempY);
+        repaint();
     }
 
     /**
@@ -165,12 +148,28 @@ public class GamePanel extends JPanel {
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            var mousePosition = getPieceFromMousePos(e.getX(), e.getY());
+            var mousePosition = getTileFromMousePos(e.getX(), e.getY());
             if (mousePosition != null && gameLogic.moveTile(mousePosition)) {
-                gameInfoView.increaseStep();
-                checkFinished();
-                repaint();
+                updateAfterMoving();
             }
+        }
+
+        /**
+         * Get tile from mouse position
+         *
+         * @param mouseX horizontal mouse position
+         * @param mouseY vertical mouse position
+         * @return tile where mouse is (null if mouse is outside game board)
+         */
+        private TilePosition getTileFromMousePos(int mouseX, int mouseY) {
+            int x = (mouseX - MARGIN_LEFT) * gameLogic.getRow() / tilesView.getWidth();
+            int y = (mouseY - MARGIN_TOP) * gameLogic.getColumn() / tilesView.getHeight();
+
+            if (x < 0 || x > gameLogic.getRow() - 1 || y < 0 || y > gameLogic.getColumn() - 1) {
+                return null;
+            }
+
+            return new TilePosition((byte) x, (byte) y);
         }
     }
 
@@ -189,17 +188,8 @@ public class GamePanel extends JPanel {
                 default -> false;
             };
             if (hasMoved) {
-                gameInfoView.increaseStep();
-                checkFinished();
-                repaint();
+                updateAfterMoving();
             }
-        }
-    }
-
-    private void checkFinished() {
-        if (gameLogic.hasFinished()) {
-            gameInfoView.stopTimer();
-            isPlaying = false;
         }
     }
 }

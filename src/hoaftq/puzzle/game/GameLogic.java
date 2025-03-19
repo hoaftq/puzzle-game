@@ -2,40 +2,20 @@ package hoaftq.puzzle.game;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.Objects;
 import java.util.Random;
 
 public class GameLogic {
-    private byte row;
+    private final byte row;
+    private final byte column;
 
-    /**
-     * Subdivision vertical
-     */
-    private byte column;
-
-    /**
-     * Piece game board
-     */
-    public TilePosition[][] tilePositions;
-
-    /**
-     * Empty piece
-     */
-    public TilePosition emptyTilePosition;
-
-
-    public byte getRow() {
-        return row;
-    }
-
-    public byte getColumn() {
-        return column;
-    }
+    private TilePosition[][] tilePositions;
+    private TilePosition emptyTilePosition;
 
     public GameLogic(byte row, byte column, EmptyTilePosition position) {
         this.row = row;
         this.column = column;
 
-        // Initialize empty piece
         switch (position) {
             case TOP_LEFT:
                 emptyTilePosition = new TilePosition((byte) 0, (byte) 0);
@@ -53,9 +33,23 @@ public class GameLogic {
 
     }
 
-    /**
-     * Create new game board
-     */
+    public byte getRow() {
+        return row;
+    }
+
+    public byte getColumn() {
+        return column;
+    }
+
+    public TilePosition getEmptyTilePosition() {
+        return emptyTilePosition;
+    }
+
+    public TilePosition getAt(int x, int y) {
+        Objects.requireNonNull(tilePositions, "createGameBoard must be called first.");
+        return tilePositions[x][y];
+    }
+
     public void createGameBoard() {
 
         // Initialize original game board
@@ -79,37 +73,37 @@ public class GameLogic {
         var random = new Random();
         while (tilePositionList.size() > 0) {
             int index = random.nextInt(tilePositionList.size());
-            move(tilePositionList.get(index));
+            moveRandomly(tilePositionList.get(index));
             tilePositionList.remove(index);
         }
 
         // Move empty piece to default position
-        move(saveEmptyPiece);
+        moveRandomly(saveEmptyPiece);
     }
 
     /**
      * Random move from empty piece to new piece<br/>
      * Used to disturbance piece
      *
-     * @param tilePosition destination move
+     * @param destinationPos destination move
      */
-    private void move(TilePosition tilePosition) {
+    private void moveRandomly(TilePosition destinationPos) {
         int stepX;
         int stepY;
 
         // Calculate horizontal move module step
-        if (emptyTilePosition.x() < tilePosition.x()) {
+        if (emptyTilePosition.x() < destinationPos.x()) {
             stepX = 1;
-        } else if (emptyTilePosition.x() > tilePosition.x()) {
+        } else if (emptyTilePosition.x() > destinationPos.x()) {
             stepX = -1;
         } else {
             stepX = 0;
         }
 
         // Calculate vertical move module step
-        if (emptyTilePosition.y() < tilePosition.y()) {
+        if (emptyTilePosition.y() < destinationPos.y()) {
             stepY = 1;
-        } else if (emptyTilePosition.y() > tilePosition.y()) {
+        } else if (emptyTilePosition.y() > destinationPos.y()) {
             stepY = -1;
         } else {
             stepY = 0;
@@ -127,10 +121,10 @@ public class GameLogic {
 
                 // If can't move horizontally, move vertically until the move
                 // completed
-                if (emptyTilePosition.x() == tilePosition.x()) {
-                    while (tilePosition.y() != emptyTilePosition.y()) {
-                        tilePositions[tilePosition.x()][emptyTilePosition.y()] = tilePositions[tilePosition.x()][emptyTilePosition.y()
-                                                                                                                 + stepY];
+                if (emptyTilePosition.x() == destinationPos.x()) {
+                    while (destinationPos.y() != emptyTilePosition.y()) {
+                        tilePositions[destinationPos.x()][emptyTilePosition.y()] = tilePositions[destinationPos.x()][emptyTilePosition.y()
+                                                                                                                     + stepY];
 //                        emptyTilePosition.y += stepY;
                         emptyTilePosition = emptyTilePosition.moveVertically(stepY);
                     }
@@ -147,10 +141,10 @@ public class GameLogic {
 
                 // If can't move vertically, move horizontally until the move
                 // completed
-                if (emptyTilePosition.y() == tilePosition.y()) {
-                    while (tilePosition.x() != emptyTilePosition.x()) {
-                        tilePositions[emptyTilePosition.x()][tilePosition.y()] = tilePositions[emptyTilePosition.x()
-                                                                                               + stepX][tilePosition.y()];
+                if (emptyTilePosition.y() == destinationPos.y()) {
+                    while (destinationPos.x() != emptyTilePosition.x()) {
+                        tilePositions[emptyTilePosition.x()][destinationPos.y()] = tilePositions[emptyTilePosition.x()
+                                                                                                 + stepX][destinationPos.y()];
 //                        emptyTilePosition.x += stepX;
                         emptyTilePosition = emptyTilePosition.moveHorizontally(stepX);
                     }

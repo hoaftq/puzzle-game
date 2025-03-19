@@ -10,41 +10,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Objects;
 
-/**
- * Puzzle image
- */
 public record PuzzleImage(String fileName, boolean isInternalResource) implements Serializable {
 
     /**
-     * Create puzzle image
-     *
-     * @param fileName           image file name
-     * @param isInternalResource is on the execute file
-     */
-    public PuzzleImage(String fileName, boolean isInternalResource) {
-        this.fileName = fileName;
-        this.isInternalResource = isInternalResource;
-    }
-
-    /**
-     * @return image file name
-     */
-    public String getFileName() {
-        return fileName;
-    }
-
-    /**
-     * @return is an embedded image or external one
-     */
-    public boolean isInternalResource() {
-        return isInternalResource;
-    }
-
-    /**
-     * Load image from resource or a file
-     *
-     * @return image
-     * @throws IOException an error occurs during reading
+     * Load image from resource or an external file
      */
     public Image loadImage() throws IOException {
         if (isInternalResource) {
@@ -59,10 +28,6 @@ public record PuzzleImage(String fileName, boolean isInternalResource) implement
 
     @Override
     public String toString() {
-        if (isInternalResource) {
-            return fileName;
-        }
-
-        return new File(fileName).getName();
+        return isInternalResource ? fileName : new File(fileName).getName();
     }
 }
