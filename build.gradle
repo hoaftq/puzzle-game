@@ -6,7 +6,7 @@ task copyResources(type: Copy) {
 }
 
 application {
-    mainClass = 'hoaftq.puzzle.game.Puzzle'
+    mainClass = 'hoaftq.puzzle.Puzzle'
 }
 
 sourceSets {
@@ -23,9 +23,7 @@ compileJava {
 
 jar {
     manifest {
-        attributes(
-                'Main-Class': 'hoaftq.puzzle.game.Puzzle',
-        )
+        attributes('Main-Class': 'hoaftq.puzzle.Puzzle')
     }
 
     archiveFileName = 'Puzzle.jar'
