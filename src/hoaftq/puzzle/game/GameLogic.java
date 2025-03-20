@@ -16,21 +16,12 @@ public class GameLogic {
         this.row = row;
         this.column = column;
 
-        switch (position) {
-            case TOP_LEFT:
-                emptyTilePosition = new TilePosition((byte) 0, (byte) 0);
-                break;
-            case TOP_RIGHT:
-                emptyTilePosition = new TilePosition((byte) (row - 1), (byte) 0);
-                break;
-            case BOTTOM_RIGHT:
-                emptyTilePosition = new TilePosition((byte) (row - 1), (byte) (column - 1));
-                break;
-            case BOTTOM_LEFT:
-                emptyTilePosition = new TilePosition((byte) 0, (byte) (column - 1));
-                break;
-        }
-
+        emptyTilePosition = switch (position) {
+            case TOP_LEFT -> new TilePosition((byte) 0, (byte) 0);
+            case TOP_RIGHT -> new TilePosition((byte) (row - 1), (byte) 0);
+            case BOTTOM_RIGHT -> new TilePosition((byte) (row - 1), (byte) (column - 1));
+            case BOTTOM_LEFT -> new TilePosition((byte) 0, (byte) (column - 1));
+        };
     }
 
     public byte getRow() {
@@ -51,81 +42,63 @@ public class GameLogic {
     }
 
     public void createGameBoard() {
+        initializeTiles();
+        shuffleTiles();
+    }
 
-        // Initialize original game board
+    private void initializeTiles() {
         tilePositions = new TilePosition[row][column];
         for (byte i = 0; i < row; i++) {
             for (byte j = 0; j < column; j++) {
                 tilePositions[i][j] = new TilePosition(i, j);
             }
         }
+    }
 
-        // Add game board to a piece list
-        java.util.List<TilePosition> tilePositionList = new LinkedList<>();
-        for (TilePosition[] pa : tilePositions) {
-            tilePositionList.addAll(Arrays.asList(pa));
+    private void shuffleTiles() {
+        var tilePositions = new LinkedList<TilePosition>();
+        for (TilePosition[] pa : this.tilePositions) {
+            tilePositions.addAll(Arrays.asList(pa));
         }
-        tilePositionList.remove(emptyTilePosition);
+        tilePositions.remove(emptyTilePosition);
 
         // Random move from empty piece to all piece on the pieces list
-//        var saveEmptyPiece = emptyTilePosition.clone();
-        var saveEmptyPiece = emptyTilePosition;
+        var savedEmptyTilePosition = emptyTilePosition;
         var random = new Random();
-        while (tilePositionList.size() > 0) {
-            int index = random.nextInt(tilePositionList.size());
-            moveRandomly(tilePositionList.get(index));
-            tilePositionList.remove(index);
+        while (!tilePositions.isEmpty()) {
+            int index = random.nextInt(tilePositions.size());
+            moveRandomly(tilePositions.get(index));
+            tilePositions.remove(index);
         }
 
         // Move empty piece to default position
-        moveRandomly(saveEmptyPiece);
+        moveRandomly(savedEmptyTilePosition);
     }
 
     /**
-     * Random move from empty piece to new piece<br/>
-     * Used to disturbance piece
-     *
-     * @param destinationPos destination move
+     * Random move from empty tile to destination position
      */
     private void moveRandomly(TilePosition destinationPos) {
-        int stepX;
-        int stepY;
+        // Calculate horizontal move step
+        var stepX = Byte.compare(destinationPos.x(), emptyTilePosition.x());
 
-        // Calculate horizontal move module step
-        if (emptyTilePosition.x() < destinationPos.x()) {
-            stepX = 1;
-        } else if (emptyTilePosition.x() > destinationPos.x()) {
-            stepX = -1;
-        } else {
-            stepX = 0;
-        }
+        // Calculate vertical move step
+        var stepY = Byte.compare(destinationPos.y(), emptyTilePosition.y());
 
-        // Calculate vertical move module step
-        if (emptyTilePosition.y() < destinationPos.y()) {
-            stepY = 1;
-        } else if (emptyTilePosition.y() > destinationPos.y()) {
-            stepY = -1;
-        } else {
-            stepY = 0;
-        }
-
-        Random random = new Random();
+        var random = new Random();
         while (true) {
             if (random.nextBoolean()) {
 
                 // Move horizontally 1 step
-                tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x()
-                                                                                            + stepX][emptyTilePosition.y()];
-//                emptyTilePosition.x += stepX;
+                tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
+                        = tilePositions[emptyTilePosition.x() + stepX][emptyTilePosition.y()];
                 emptyTilePosition = emptyTilePosition.moveHorizontally(stepX);
 
-                // If can't move horizontally, move vertically until the move
-                // completed
+                // If the empty position can't be moved horizontally anymore, move vertically until reaching the destination
                 if (emptyTilePosition.x() == destinationPos.x()) {
-                    while (destinationPos.y() != emptyTilePosition.y()) {
-                        tilePositions[destinationPos.x()][emptyTilePosition.y()] = tilePositions[destinationPos.x()][emptyTilePosition.y()
-                                                                                                                     + stepY];
-//                        emptyTilePosition.y += stepY;
+                    while (emptyTilePosition.y() != destinationPos.y()) {
+                        tilePositions[destinationPos.x()][emptyTilePosition.y()]
+                                = tilePositions[destinationPos.x()][emptyTilePosition.y() + stepY];
                         emptyTilePosition = emptyTilePosition.moveVertically(stepY);
                     }
 
@@ -134,18 +107,15 @@ public class GameLogic {
             } else {
 
                 // Move vertically 1 step
-                tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x()][emptyTilePosition.y()
-                                                                                                                   + stepY];
-//                emptyTilePosition.y += stepY;
+                tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
+                        = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + stepY];
                 emptyTilePosition = emptyTilePosition.moveVertically(stepY);
 
-                // If can't move vertically, move horizontally until the move
-                // completed
+                // If the empty position can't be moved vertically anymore, move horizontally until reaching the destination
                 if (emptyTilePosition.y() == destinationPos.y()) {
                     while (destinationPos.x() != emptyTilePosition.x()) {
-                        tilePositions[emptyTilePosition.x()][destinationPos.y()] = tilePositions[emptyTilePosition.x()
-                                                                                                 + stepX][destinationPos.y()];
-//                        emptyTilePosition.x += stepX;
+                        tilePositions[emptyTilePosition.x()][destinationPos.y()]
+                                = tilePositions[emptyTilePosition.x() + stepX][destinationPos.y()];
                         emptyTilePosition = emptyTilePosition.moveHorizontally(stepX);
                     }
 
@@ -156,72 +126,42 @@ public class GameLogic {
     }
 
     /**
-     * Check game finished
+     * Check if the game finishes
      */
     public boolean hasFinished() {
-        boolean isFinished = true;
-
-        // Check pieces on ySplit - 1 rows on the top
         for (int i = 0; i < row; i++) {
-            for (int j = 0; j < column - 1; j++) {
+            for (int j = 0; j < column; j++) {
                 if (tilePositions[i][j].x() != i || tilePositions[i][j].y() != j) {
-                    isFinished = false;
+                    return false;
                 }
             }
         }
 
-        // Check pieces on the bottom row
-        for (int i = 0; i < row - 1; i++) {
-            if (tilePositions[i][column - 1].x() != i
-                || tilePositions[i][column - 1].y() != column - 1) {
-                isFinished = false;
-            }
-        }
-
-        return isFinished;
+        return true;
     }
 
-    public boolean moveEmptyPositionToRight() {
-        if (emptyTilePosition.x() < row - 1) {
-            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x() + 1][emptyTilePosition.y()];
-            emptyTilePosition = emptyTilePosition.moveHorizontally(1);
+    public boolean moveEmptyPositionHorizontally(int step) {
+        if (emptyTilePosition.x() + step >= 0 && emptyTilePosition.x() + step < row) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x() + step][emptyTilePosition.y()];
+            emptyTilePosition = emptyTilePosition.moveHorizontally(step);
             return true;
         }
 
         return false;
     }
 
-    public boolean moveEmptyPositionToLeft() {
-        if (emptyTilePosition.x() != 0) {
-            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x() - 1][emptyTilePosition.y()];
-            emptyTilePosition = emptyTilePosition.moveHorizontally(-1);
+    public boolean moveEmptyPositionVertically(int step) {
+        if (emptyTilePosition.y() + step >= 0 && emptyTilePosition.y() + step < column) {
+            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
+                    = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + step];
+            emptyTilePosition = emptyTilePosition.moveVertically(step);
             return true;
         }
 
         return false;
     }
 
-    public boolean moveEmptyPositionUp() {
-        if (emptyTilePosition.y() != 0) {
-            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() - 1];
-            emptyTilePosition = emptyTilePosition.moveVertically(-1);
-            return true;
-        }
-
-        return false;
-    }
-
-    public boolean moveEmptyPositionDown() {
-        if (emptyTilePosition.y() < getRow() - 1) {
-            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + 1];
-            emptyTilePosition = emptyTilePosition.moveVertically(1);
-            return true;
-        }
-
-        return false;
-    }
-
-    public boolean moveTile(TilePosition position) {
+    public boolean moveEmptyPositionTo(TilePosition position) {
         if (Math.abs(position.x() - emptyTilePosition.x()) + Math.abs(position.y() - emptyTilePosition.y()) == 1) {
             tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[position.x()][position.y()];
             emptyTilePosition = position;

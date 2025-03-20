@@ -1,10 +1,9 @@
 /**
  * Puzzle game using Java AWT
- * Copyright @ 2011 Trac Quang Hoa
  */
 package hoaftq.puzzle.option;
 
-import hoaftq.puzzle.common.*;
+import hoaftq.puzzle.common.PuzzleImage;
 import hoaftq.puzzle.game.EmptyTilePosition;
 import hoaftq.puzzle.utility.WindowUtil;
 
@@ -12,15 +11,18 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Objects;
 
 /**
  * Option game dialog
  */
 public class OptionDialog extends JDialog {
-    private final OptionStorage optionStorage;
+    private final ImageListStorage imageListStorage;
+    private final GameOptionStorage gameOptionStorage;
     private final GameOptionValidator validator;
 
-    private final GameOptionStorage gameOptionStorage;
     private GameOption gameOption;
 
     private JRadioButton imageRadioButton;
@@ -46,21 +48,25 @@ public class OptionDialog extends JDialog {
      */
     private boolean isOK;
 
-    public GameOption getGameInfo() {
+    public GameOption getGameOption() {
         return gameOption;
     }
 
     /**
      * Create option dialog
      *
-     * @param owner    owner of dialog
+     * @param owner      owner of dialog
      * @param gameOption game information
      */
-    public OptionDialog(JFrame owner, OptionStorage optionStorage, GameOptionValidator validator, GameOptionStorage gameOptionStorage, GameOption gameOption) {
+    public OptionDialog(JFrame owner,
+                        ImageListStorage imageListStorage,
+                        GameOptionStorage gameOptionStorage,
+                        GameOptionValidator validator,
+                        GameOption gameOption) {
         super(owner, "Customize Game", true);
-        this.optionStorage = optionStorage;
-        this.validator = validator;
+        this.imageListStorage = imageListStorage;
         this.gameOptionStorage = gameOptionStorage;
+        this.validator = validator;
         this.gameOption = gameOption;
 
         createLayout();
@@ -117,8 +123,12 @@ public class OptionDialog extends JDialog {
         var radioButton = new JRadioButton(text, isSelected);
         radioButton.addActionListener(e -> {
             var isImageMode = e.getSource() == imageRadioButton;
-            showImageOrNumbers(isImageMode, puzzleImageList.getSelectedValue());
+            var selectedImage = Objects.requireNonNullElse(
+                    puzzleImageList.getSelectedValue(),
+                    puzzleImageList.getModel().getElementAt(0));
+            showImageOrNumbers(isImageMode, selectedImage);
         });
+
 
         buttonGroup.add(radioButton);
         return radioButton;
@@ -144,15 +154,25 @@ public class OptionDialog extends JDialog {
         imageNumbersPanel = new ImageNumbersPanel(gameOption.row(), gameOption.column(), 320, 200);
         panel.add(imageNumbersPanel, BorderLayout.NORTH);
 
-        // Create panel browse image
+        // Create panel for browsing images
         var imageControlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         // Create puzzle image list box
+        puzzleImageList = createImageListBox();
+        imageControlPanel.add(new JScrollPane(puzzleImageList));
+
+        imageControlPanel.add(browseButton = createBrowseButton());
+
+        panel.add(imageControlPanel, BorderLayout.CENTER);
+        return panel;
+    }
+
+    private JList<PuzzleImage> createImageListBox() {
         DefaultListModel<PuzzleImage> listModel = new DefaultListModel<>();
         listModel.addElement(new PuzzleImage("default.jpg", true));
-        listModel.addAll(optionStorage.loadPuzzleImages());
+        listModel.addAll(imageListStorage.loadPuzzleImages());
+        var puzzleImageList = new JList<>(listModel);
 
-        puzzleImageList = new JList<>(listModel);
         puzzleImageList.setFixedCellWidth(200);
         puzzleImageList.setSelectedValue(gameOption.puzzleImage(), true);
         puzzleImageList.addListSelectionListener(e -> {
@@ -161,38 +181,32 @@ public class OptionDialog extends JDialog {
             }
         });
 
-        imageControlPanel.add(new JScrollPane(puzzleImageList));
-        imageControlPanel.add(createBrowseButton(listModel));
-
-        panel.add(imageControlPanel, BorderLayout.CENTER);
-        return panel;
+        return puzzleImageList;
     }
 
-    private JButton createBrowseButton(DefaultListModel<PuzzleImage> listModel) {
+    private JButton createBrowseButton() {
         var fileChooser = createFileChooser();
 
-        browseButton = new JButton("Browse...");
+        var browseButton = new JButton("Browse...");
         browseButton.addActionListener(e -> {
-            if (fileChooser.showOpenDialog(OptionDialog.this) == JFileChooser.APPROVE_OPTION) {
-                var puzzleImage = new PuzzleImage(fileChooser.getSelectedFile().getPath(), false);
-
-                // Check puzzle image already exists in the list
-                if (listModel.contains(puzzleImage)) {
-                    puzzleImageList.setSelectedValue(puzzleImage, true);
-                    return;
-                }
-
-                // Add new puzzle image to puzzle image list and select it
-                listModel.addElement(puzzleImage);
-                puzzleImageList.setSelectedValue(puzzleImage, true);
-
-//                // Save image list to data file
-//                try {
-//                    optionStorage.savePuzzleImages(Collections.list(listModel.elements()).stream().filter(i -> !i.isInternalResource()).toList());
-//                } catch (IOException ex) {
-//                    throw new RuntimeException(ex);
-//                }
+            if (fileChooser.showOpenDialog(OptionDialog.this) != JFileChooser.APPROVE_OPTION) {
+                return;
             }
+
+            var listModel = (DefaultListModel<PuzzleImage>) puzzleImageList.getModel();
+            var puzzleImage = new PuzzleImage(fileChooser.getSelectedFile().getPath(), false);
+
+            // Check puzzle image already exists in the list
+            if (listModel.contains(puzzleImage)) {
+                puzzleImageList.setSelectedValue(puzzleImage, true);
+                return;
+            }
+
+            // Add new puzzle image to puzzle image list and select it
+            listModel.addElement(puzzleImage);
+            puzzleImageList.setSelectedValue(puzzleImage, true);
+
+            saveImageList(listModel);
         });
 
         return browseButton;
@@ -223,6 +237,21 @@ public class OptionDialog extends JDialog {
         });
 
         return fileChooser;
+    }
+
+    private void saveImageList(DefaultListModel<PuzzleImage> listModel) {
+        try {
+            var imageList = Collections.list(listModel.elements())
+                    .stream()
+                    .filter(i -> !i.isInternalResource())
+                    .toList();
+            imageListStorage.savePuzzleImages(imageList);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error occurred while saving the images.",
+                    "Puzzle",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -258,43 +287,58 @@ public class OptionDialog extends JDialog {
     private JButton createOKButton() {
         var okButton = new JButton("OK");
         okButton.addActionListener(e -> {
-            if (!validator.validateRowOrColumn(rowTextField.getText())) {
-                JOptionPane.showMessageDialog(OptionDialog.this,
-                        "Please enter a number from 2 to 10.");
-                rowTextField.requestFocus();
-                rowTextField.selectAll();
+            if (!validateInputs()) {
                 return;
             }
 
-            if (!validator.validateRowOrColumn(colTextField.getText())) {
-                JOptionPane.showMessageDialog(OptionDialog.this,
-                        "Please enter a number from 2 to 10.");
-                colTextField.requestFocus();
-                colTextField.selectAll();
-                return;
-            }
-
-            // Validate selected image
-            boolean usedImage = imageRadioButton.isSelected();
-            if (usedImage && puzzleImageList.isSelectionEmpty()) {
-                JOptionPane.showMessageDialog(OptionDialog.this, "Please select an image.");
-                return;
-            }
-
-            gameOption = new GameOption(usedImage, puzzleImageList.getSelectedValue(), Byte.parseByte(rowTextField.getText()),
-                    Byte.parseByte(colTextField.getText()), EmptyTilePosition.BOTTOM_RIGHT);
+            gameOption = new GameOption(
+                    imageRadioButton.isSelected(),
+                    puzzleImageList.getSelectedValue(),
+                    Byte.parseByte(rowTextField.getText()),
+                    Byte.parseByte(colTextField.getText()),
+                    EmptyTilePosition.BOTTOM_RIGHT);
 
             // Save game information to data file
             gameOptionStorage.save(gameOption);
-
-            // FIXME
-//            imageNumbersPanel.displayImage(usedImage ? gameInfo.puzzleImage() : null);
 
             isOK = true;
             OptionDialog.this.setVisible(false);
         });
 
         return okButton;
+    }
+
+    private boolean validateInputs() {
+        if (!validator.validateRowOrColumn(rowTextField.getText())) {
+            JOptionPane.showMessageDialog(OptionDialog.this,
+                    "Please enter a number from 2 to 10.",
+                    "Puzzle",
+                    JOptionPane.INFORMATION_MESSAGE);
+            rowTextField.requestFocus();
+            rowTextField.selectAll();
+            return false;
+        }
+
+        if (!validator.validateRowOrColumn(colTextField.getText())) {
+            JOptionPane.showMessageDialog(OptionDialog.this,
+                    "Please enter a number from 2 to 10.",
+                    "Puzzle",
+                    JOptionPane.INFORMATION_MESSAGE);
+            colTextField.requestFocus();
+            colTextField.selectAll();
+            return false;
+        }
+
+        // Validate selected image
+        if (imageRadioButton.isSelected() && puzzleImageList.isSelectionEmpty()) {
+            JOptionPane.showMessageDialog(OptionDialog.this,
+                    "Please select an image.",
+                    "Puzzle",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+
+        return true;
     }
 
     /**

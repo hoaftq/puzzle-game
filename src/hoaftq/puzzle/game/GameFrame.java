@@ -1,70 +1,78 @@
 /**
  * Puzzle game using Java AWT
- * Copyright @ 2011 Trac Quang Hoa
  */
 package hoaftq.puzzle.game;
 
 import hoaftq.puzzle.AboutDialog;
 import hoaftq.puzzle.info.GameInfoView;
-import hoaftq.puzzle.option.OptionDialog;
-import hoaftq.puzzle.option.OptionStorage;
-import hoaftq.puzzle.option.GameOption;
-import hoaftq.puzzle.option.GameOptionStorage;
-import hoaftq.puzzle.option.GameOptionValidator;
+import hoaftq.puzzle.option.*;
 import hoaftq.puzzle.utility.WindowUtil;
 
 import javax.swing.*;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
-import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 
-/**
- * Game frame
- */
 public class GameFrame extends JFrame {
+    private static final int DEFAULT_WIDTH = 500;
+    private static final int DEFAULT_HEIGHT = 500;
 
-    private final GameOptionStorage gameOptionStorage;
+    private GamePanel gamePanel;
+    private GameOption gameOption;
 
-    /**
-     * Create game frame
-     */
-    public GameFrame(GameOptionStorage gameOptionStorage) {
-        this.gameOptionStorage = gameOptionStorage;
+    public GameFrame(GameOption gameOption) {
+        this.gameOption = gameOption;
+        initializeFrame();
+        createGamePanel();
+
+        gamePanel.newGame(gameOption);
+
+        // Update game panel's size when frame resized
+        setUpGamePanelResize();
+
+        // Focus game panel when frame has focus
+        setUpFocusGamePanel();
+    }
+
+    private void initializeFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setTitle("Puzzle");
         setWindowLookAndFeel();
 
-        addMenu();
-
         setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
         WindowUtil.centerOwner(this);
 
-        // Create game panel with game information get from properties file
+        addMenu();
+    }
+
+    private void createGamePanel() {
         try {
-            gamePanel = new GamePanel(gameOption = gameOptionStorage.get(), new GameInfoView());
-            add(gamePanel);
+            gamePanel = new GamePanel(new GameInfoView());
         } catch (IOException e) {
+            // TODO different approach?
             JOptionPane.showMessageDialog(null,
-                    "An error occurred while loading game", "Puzzle",
+                    "An error occurred while loading game.", "Puzzle",
                     JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
+            System.exit(1);
         }
 
-        // Update game panel when frame resize
+        add(gamePanel);
+    }
+
+    private void setUpGamePanelResize() {
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                Insets inserts = getInsets();
-                gamePanel.setGameBoardSize(getWidth()
-                                           - (inserts.left + inserts.right), getHeight()
-                                                                             - (inserts.top + inserts.bottom + getJMenuBar()
-                        .getHeight()));
+                var inserts = getInsets();
+                gamePanel.setGameBoardSize(
+                        getWidth() - (inserts.left + inserts.right),
+                        getHeight() - (inserts.top + inserts.bottom + getJMenuBar().getHeight()));
             }
         });
+    }
 
-        // Set focus for game panel when frame has focus
+    private void setUpFocusGamePanel() {
         addFocusListener(new FocusAdapter() {
             @Override
             public void focusGained(FocusEvent e) {
@@ -77,69 +85,75 @@ public class GameFrame extends JFrame {
      * Add menu to game frame
      */
     private void addMenu() {
-        JMenuBar menuBar = new JMenuBar();
+        var menuBar = new JMenuBar();
+        menuBar.add(createGameMenu());
+        menuBar.add(createAboutMenu());
         setJMenuBar(menuBar);
+    }
 
-        // Add game menu
-        JMenu gameMenu = new JMenu("Game");
+    private JMenu createGameMenu() {
+        var gameMenu = new JMenu("Game");
         gameMenu.setMnemonic('G');
-        menuBar.add(gameMenu);
 
-        // Add new game menu item
-        JMenuItem newGameMenuItem = gameMenu.add("New Game");
+        createNewGameMenuItem(gameMenu);
+        gameMenu.add(createCustomizeGameMenuItem());
+
+        gameMenu.addSeparator();
+
+        createExitMenuItem(gameMenu);
+
+        return gameMenu;
+    }
+
+    private void createNewGameMenuItem(JMenu gameMenu) {
+        var newGameMenuItem = gameMenu.add("New Game");
         newGameMenuItem.setMnemonic('N');
-        newGameMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
-                InputEvent.CTRL_MASK));
-        newGameMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        newGameMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK));
+        newGameMenuItem.addActionListener(e -> gamePanel.newGame(gameOption));
+    }
+
+    private JMenuItem createCustomizeGameMenuItem() {
+        var customizeGameMenuItem = new JMenuItem("Customize Game", 'C');
+        customizeGameMenuItem.addActionListener(e -> {
+            var gameInfoValidator = new GameOptionValidator();
+            var imageListStorage = new ImageListStorage();
+            var gameInfoStorage = new GameOptionStorage(gameInfoValidator);
+            var optionDialog = new OptionDialog(
+                    GameFrame.this,
+                    imageListStorage,
+                    gameInfoStorage,
+                    gameInfoValidator,
+                    gameOption);
+
+            if (optionDialog.showDialog()) {
+                gameOption = optionDialog.getGameOption();
+
+                // new game with game information get from option dialog
                 gamePanel.newGame(gameOption);
             }
         });
 
-        // Add customize game menu item
-        JMenuItem customizeGameMenuItem = new JMenuItem("Customize Game", 'C');
-        gameMenu.add(customizeGameMenuItem);
-        customizeGameMenuItem.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (optionDialog == null) {
-                    var optionStorage = new OptionStorage();
-                    var gameInfoValidator = new GameOptionValidator();
-                    var gameInfoStorage = new GameOptionStorage(gameInfoValidator);
-                    optionDialog = new OptionDialog(GameFrame.this, optionStorage, gameInfoValidator, gameInfoStorage, gameOption);
-                }
+        return customizeGameMenuItem;
+    }
 
-                if (optionDialog.showDialog()) {
-                    gameOption = optionDialog.getGameInfo();
-
-                    // new game with game information get from option dialog
-                    gamePanel.newGame(gameOption);
-                }
-            }
-        });
-
-        gameMenu.addSeparator();
-
-        // Add exit menu item
-        AbstractAction exitAction;
-        gameMenu.add(exitAction = new AbstractAction("Exit") {
+    private static void createExitMenuItem(JMenu gameMenu) {
+        var exitAction = new AbstractAction("Exit") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
             }
-
-            private static final long serialVersionUID = 1L;
-        });
+        };
         exitAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_E);
+        gameMenu.add(exitAction);
+    }
 
-        // Add about menu
-        JMenu aboutMenu = new JMenu("About");
+    private JMenu createAboutMenu() {
+        var aboutMenu = new JMenu("About");
         aboutMenu.setMnemonic('A');
         aboutMenu.addMenuListener(new MenuListener() {
             @Override
             public void menuSelected(MenuEvent e) {
-                AboutDialog aboutDialog = new AboutDialog(GameFrame.this);
+                var aboutDialog = new AboutDialog(GameFrame.this);
                 aboutDialog.setVisible(true);
             }
 
@@ -151,45 +165,16 @@ public class GameFrame extends JFrame {
             public void menuCanceled(MenuEvent e) {
             }
         });
-        menuBar.add(aboutMenu);
+
+        return aboutMenu;
     }
 
-    /**
-     * Set window look and feel for the application
-     */
     private void setWindowLookAndFeel() {
         try {
-            UIManager
-                    .setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+            UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
             SwingUtilities.updateComponentTreeUI(this);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-    /**
-     * Game panel where display game board
-     */
-    private GamePanel gamePanel;
-
-    /**
-     * Game information
-     */
-    private GameOption gameOption;
-
-    /**
-     * Option dialog
-     */
-    private OptionDialog optionDialog;
-
-    /**
-     * Default width of game frame
-     */
-    private static final int DEFAULT_WIDTH = 500;
-
-    /**
-     * Default height of game frame
-     */
-    private static final int DEFAULT_HEIGHT = 500;
-    private static final long serialVersionUID = 1L;
 }

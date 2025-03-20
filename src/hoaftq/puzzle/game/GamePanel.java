@@ -32,7 +32,7 @@ public class GamePanel extends JPanel {
 
     private boolean isPlaying = false;
 
-    public GamePanel(GameOption gameOption, GameInfoView gameInfoView) {
+    public GamePanel(GameInfoView gameInfoView) {
         this.gameInfoView = gameInfoView;
         this.gameInfoView.registerTickListener(t -> repaint());
 
@@ -40,12 +40,10 @@ public class GamePanel extends JPanel {
         addKeyListener(new KeyHandler());
 
         setFocusable(true);
-
-        newGame(gameOption);
     }
 
     /**
-     * Set game board size<br/>
+     * Set game board size.
      * Used when game frame resize
      *
      * @param width  width of client frame
@@ -62,22 +60,7 @@ public class GamePanel extends JPanel {
      */
     public void newGame(GameOption gameOption) {
         gameLogic = new GameLogic(gameOption.row(), gameOption.column(), gameOption.emptyPosition());
-
-        if (gameOption.usedImage()) {
-            try {
-                tilesView = new ImageTilesView(
-                        gameOption.row(),
-                        gameOption.column(),
-                        this.getWidth(),
-                        this.getHeight(),
-                        gameOption.puzzleImage());
-            } catch (IOException ignored) {
-            }
-        }
-
-        if (tilesView == null) {
-            tilesView = new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
-        }
+        tilesView = createTitleView(gameOption);
 
         // Reset game information
         gameInfoView.reset();
@@ -93,7 +76,6 @@ public class GamePanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         if (isPlaying) {
 
             // Draw game board background
@@ -125,6 +107,22 @@ public class GamePanel extends JPanel {
         paintInformation(g);
     }
 
+    private TilesView createTitleView(GameOption gameOption) {
+        if (gameOption.usedImage()) {
+            try {
+                return new ImageTilesView(
+                        gameOption.row(),
+                        gameOption.column(),
+                        this.getWidth(),
+                        this.getHeight(),
+                        gameOption.puzzleImage());
+            } catch (IOException ignored) {
+            }
+        }
+
+        return new NumberTilesView(gameOption.row(), gameOption.column(), this.getWidth(), this.getHeight());
+    }
+
     private void paintInformation(Graphics g) {
         int y1 = MARGIN_TOP + tilesView.getHeight();
         int y2 = y1 + MARGIN_BOTTOM;
@@ -149,7 +147,7 @@ public class GamePanel extends JPanel {
         @Override
         public void mouseClicked(MouseEvent e) {
             var mousePosition = getTileFromMousePos(e.getX(), e.getY());
-            if (mousePosition != null && gameLogic.moveTile(mousePosition)) {
+            if (mousePosition != null && gameLogic.moveEmptyPositionTo(mousePosition)) {
                 updateAfterMoving();
             }
         }
@@ -181,10 +179,10 @@ public class GamePanel extends JPanel {
         @Override
         public void keyPressed(KeyEvent e) {
             var hasMoved = switch (e.getKeyCode()) {
-                case KeyEvent.VK_LEFT -> gameLogic.moveEmptyPositionToRight();
-                case KeyEvent.VK_RIGHT -> gameLogic.moveEmptyPositionToLeft();
-                case KeyEvent.VK_DOWN -> gameLogic.moveEmptyPositionUp();
-                case KeyEvent.VK_UP -> gameLogic.moveEmptyPositionDown();
+                case KeyEvent.VK_LEFT -> gameLogic.moveEmptyPositionHorizontally(1);
+                case KeyEvent.VK_RIGHT -> gameLogic.moveEmptyPositionHorizontally(-1);
+                case KeyEvent.VK_DOWN -> gameLogic.moveEmptyPositionVertically(-1);
+                case KeyEvent.VK_UP -> gameLogic.moveEmptyPositionVertically(1);
                 default -> false;
             };
             if (hasMoved) {

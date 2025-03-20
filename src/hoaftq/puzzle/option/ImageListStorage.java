@@ -5,7 +5,7 @@ import hoaftq.puzzle.common.PuzzleImage;
 import java.io.*;
 import java.util.List;
 
-public class OptionStorage {
+public class ImageListStorage {
 
     /**
      * Name of file containing image file names that user added
