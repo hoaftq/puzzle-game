@@ -31,6 +31,7 @@ public class ImageListStorage {
 
             //noinspection unchecked
             return (List<PuzzleImage>) ots.readObject();
+        } catch (FileNotFoundException ignored) {
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }

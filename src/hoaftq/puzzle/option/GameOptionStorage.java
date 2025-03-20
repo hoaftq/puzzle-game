@@ -3,10 +3,7 @@ package hoaftq.puzzle.option;
 import hoaftq.puzzle.common.PuzzleImage;
 import hoaftq.puzzle.game.EmptyTilePosition;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.Properties;
 
@@ -57,6 +54,7 @@ public class GameOptionStorage {
         var properties = new Properties();
         try {
             properties.load(new FileInputStream(PUZZLE_PROPERTIES_FILENAME_KEY));
+        } catch (FileNotFoundException ignored) {
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -64,25 +62,22 @@ public class GameOptionStorage {
         // Get image type and image file name
         var imageType = properties.getProperty(IMAGE_TYPE_KEY, IMAGE_TYPE_USE_INTERNAL_IMAGE);
         var imageFileName = properties.getProperty(IMAGE_NAME_KEY, "default.jpg");
-        if (!List.of(IMAGE_TYPE_USE_NUMBER, IMAGE_TYPE_USE_INTERNAL_IMAGE, IMAGE_TYPE_USE_EXTERNAL_IMAGE)
-                .contains(imageType)) {
+        if (isInvalidImageType(imageType)
+            || (IMAGE_TYPE_USE_EXTERNAL_IMAGE.equals(imageType) && !new File(imageFileName).exists())) {
             imageType = IMAGE_TYPE_USE_INTERNAL_IMAGE;
             imageFileName = "default.jpg";
-        } else {
-            if (IMAGE_TYPE_USE_EXTERNAL_IMAGE.equals(imageType) && !new File(imageFileName).exists()) {
-                imageType = IMAGE_TYPE_USE_NUMBER;
-            }
         }
+
         var usedImage = !IMAGE_TYPE_USE_NUMBER.equals(imageType);
         var puzzleImage = new PuzzleImage(imageFileName, IMAGE_TYPE_USE_INTERNAL_IMAGE.equals(imageType));
 
         var row = properties.getProperty(ROW);
-        if (!validator.validateRowOrColumn(row)) {
+        if (validator.isInvalidRowOrColumn(row)) {
             row = "4";
         }
 
         String column = properties.getProperty(COLUMN);
-        if (!validator.validateRowOrColumn(column)) {
+        if (validator.isInvalidRowOrColumn(column)) {
             column = "4";
         }
 
@@ -94,18 +89,22 @@ public class GameOptionStorage {
                 EmptyTilePosition.BOTTOM_RIGHT);
     }
 
+    private static boolean isInvalidImageType(String imageType) {
+        return !List.of(IMAGE_TYPE_USE_NUMBER, IMAGE_TYPE_USE_INTERNAL_IMAGE, IMAGE_TYPE_USE_EXTERNAL_IMAGE)
+                .contains(imageType);
+    }
+
     private static Properties createGameInfoProperties(GameOption gameOption) {
         var properties = new Properties();
-        String imageType;
         if (gameOption.usedImage()) {
             properties.put(IMAGE_NAME_KEY, gameOption.puzzleImage().fileName());
-            imageType = gameOption.puzzleImage().isInternalResource()
+            var imageType = gameOption.puzzleImage().isInternalResource()
                     ? IMAGE_TYPE_USE_INTERNAL_IMAGE
                     : IMAGE_TYPE_USE_EXTERNAL_IMAGE;
+            properties.put(IMAGE_TYPE_KEY, imageType);
         } else {
-            imageType = IMAGE_TYPE_USE_NUMBER;
+            properties.put(IMAGE_TYPE_KEY, IMAGE_TYPE_USE_NUMBER);
         }
-        properties.put(IMAGE_TYPE_KEY, imageType);
         properties.put(ROW, String.valueOf(gameOption.row()));
         properties.put(COLUMN, String.valueOf(gameOption.column()));
         return properties;

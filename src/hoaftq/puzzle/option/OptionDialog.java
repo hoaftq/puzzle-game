@@ -309,7 +309,7 @@ public class OptionDialog extends JDialog {
     }
 
     private boolean validateInputs() {
-        if (!validator.validateRowOrColumn(rowTextField.getText())) {
+        if (validator.isInvalidRowOrColumn(rowTextField.getText())) {
             JOptionPane.showMessageDialog(OptionDialog.this,
                     "Please enter a number from 2 to 10.",
                     "Puzzle",
@@ -319,7 +319,7 @@ public class OptionDialog extends JDialog {
             return false;
         }
 
-        if (!validator.validateRowOrColumn(colTextField.getText())) {
+        if (validator.isInvalidRowOrColumn(colTextField.getText())) {
             JOptionPane.showMessageDialog(OptionDialog.this,
                     "Please enter a number from 2 to 10.",
                     "Puzzle",
