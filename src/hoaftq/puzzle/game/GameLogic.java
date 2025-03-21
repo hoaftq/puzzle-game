@@ -90,16 +90,12 @@ public class GameLogic {
             if (random.nextBoolean()) {
 
                 // Move horizontally 1 step
-                tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
-                        = tilePositions[emptyTilePosition.x() + stepX][emptyTilePosition.y()];
-                emptyTilePosition = emptyTilePosition.moveHorizontally(stepX);
+                moveEmptyPositionHorizontallyWithoutChecking(stepX);
 
                 // If the empty position can't be moved horizontally anymore, move vertically until reaching the destination
                 if (emptyTilePosition.x() == destinationPos.x()) {
                     while (emptyTilePosition.y() != destinationPos.y()) {
-                        tilePositions[destinationPos.x()][emptyTilePosition.y()]
-                                = tilePositions[destinationPos.x()][emptyTilePosition.y() + stepY];
-                        emptyTilePosition = emptyTilePosition.moveVertically(stepY);
+                        moveEmptyPositionVerticallyWithoutChecking(stepY);
                     }
 
                     break;
@@ -107,16 +103,12 @@ public class GameLogic {
             } else {
 
                 // Move vertically 1 step
-                tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
-                        = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + stepY];
-                emptyTilePosition = emptyTilePosition.moveVertically(stepY);
+                moveEmptyPositionVerticallyWithoutChecking(stepY);
 
                 // If the empty position can't be moved vertically anymore, move horizontally until reaching the destination
                 if (emptyTilePosition.y() == destinationPos.y()) {
                     while (destinationPos.x() != emptyTilePosition.x()) {
-                        tilePositions[emptyTilePosition.x()][destinationPos.y()]
-                                = tilePositions[emptyTilePosition.x() + stepX][destinationPos.y()];
-                        emptyTilePosition = emptyTilePosition.moveHorizontally(stepX);
+                        moveEmptyPositionHorizontallyWithoutChecking(stepX);
                     }
 
                     break;
@@ -142,8 +134,7 @@ public class GameLogic {
 
     public boolean moveEmptyPositionHorizontally(int step) {
         if (emptyTilePosition.x() + step >= 0 && emptyTilePosition.x() + step < row) {
-            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()] = tilePositions[emptyTilePosition.x() + step][emptyTilePosition.y()];
-            emptyTilePosition = emptyTilePosition.moveHorizontally(step);
+            moveEmptyPositionHorizontallyWithoutChecking(step);
             return true;
         }
 
@@ -152,9 +143,7 @@ public class GameLogic {
 
     public boolean moveEmptyPositionVertically(int step) {
         if (emptyTilePosition.y() + step >= 0 && emptyTilePosition.y() + step < column) {
-            tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
-                    = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + step];
-            emptyTilePosition = emptyTilePosition.moveVertically(step);
+            moveEmptyPositionVerticallyWithoutChecking(step);
             return true;
         }
 
@@ -169,6 +158,18 @@ public class GameLogic {
         }
 
         return false;
+    }
+
+    private void moveEmptyPositionHorizontallyWithoutChecking(int step) {
+        tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
+                = tilePositions[emptyTilePosition.x() + step][emptyTilePosition.y()];
+        emptyTilePosition = emptyTilePosition.moveHorizontally(step);
+    }
+
+    private void moveEmptyPositionVerticallyWithoutChecking(int step) {
+        tilePositions[emptyTilePosition.x()][emptyTilePosition.y()]
+                = tilePositions[emptyTilePosition.x()][emptyTilePosition.y() + step];
+        emptyTilePosition = emptyTilePosition.moveVertically(step);
     }
 }
 
