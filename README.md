@@ -1,7 +1,8 @@
 ### puzzle-game
+[![Puzzle](https://github.com/hoaftq/puzzle-game/actions/workflows/puzzle.yml/badge.svg?branch=master)](https://github.com/hoaftq/puzzle-game/actions/workflows/puzzle.yml)  
 A puzzle game using Java AWT
 
-A picture is divided into tiles by row and column and then those tiles are moved randomly. A player has to move each file to its original position.
+A picture is divided into tiles by row and column and then those tiles are moved randomly. A player has to move each tile to its original position.
 The game is finished when the player moves all tiles to their right place.
 
 - Puzzle with an image  
